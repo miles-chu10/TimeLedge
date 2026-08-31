@@ -119,6 +119,22 @@ final class PreferencesStoreTests: XCTestCase {
     XCTAssertEqual(bounds, CGRect(x: 0, y: -24, width: 1920, height: 24))
   }
 
+  func testDisplayPlacementAnchorsBelowSystemTopStrip() {
+    let display = DisplayDescriptor(
+      id: "built-in",
+      localizedName: "Built-in Retina Display",
+      displayID: 1,
+      isBuiltIn: true,
+      frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+      topRightSafeArea: CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
+    )
+
+    XCTAssertEqual(
+      display.placementBounds,
+      CGRect(x: 848.5, y: 0, width: 663.5, height: 950)
+    )
+  }
+
   private func descriptor(id: String, builtIn: Bool) -> DisplayDescriptor {
     DisplayDescriptor(
       id: id,

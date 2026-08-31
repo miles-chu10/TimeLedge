@@ -11,7 +11,13 @@ struct DisplayDescriptor: Identifiable, Equatable {
 
   var placementBounds: CGRect {
     if let area = topRightSafeArea, !area.isEmpty {
-      return area
+      let topEdge = min(max(frame.minY + 1, area.minY), frame.maxY)
+      return CGRect(
+        x: area.minX,
+        y: frame.minY,
+        width: area.width,
+        height: topEdge - frame.minY
+      )
     }
     return frame
   }

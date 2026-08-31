@@ -62,7 +62,7 @@ GitHub Actions workflow or a local Mac with full Xcode.
 
 Automated tests cover formatting, persistence, display-default policy,
 fullscreen evidence, panel behavior, and top-right geometry. GitHub Actions
-runs the complete 45-test suite, builds a release-optimized app bundle,
+runs the complete 48-test suite, builds a release-optimized app bundle,
 validates its app and privacy plists, and verifies its ad-hoc signature on
 macOS.
 Fullscreen Spaces, Mission Control, Stage Manager, display hot-plug, and

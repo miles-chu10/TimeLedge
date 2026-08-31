@@ -39,12 +39,13 @@ Final CI and live fullscreen validation completed 2026-08-31.
 - New pure-policy tests cover automatic, fullscreen-only, always-visible,
   fail-closed, pointer-reveal, and window-coverage behavior.
 - Dedicated transition tests prove that an ordinary maximize without a Spaces
-  change fails closed, a recent windowed-to-fullscreen Space transition is
-  accepted, verification survives leaving and returning to that Space, and
-  returning to windowed geometry clears it.
+  change fails closed, maximizing before a later Space switch also fails
+  closed, a tightly correlated windowed-to-fullscreen transition is accepted,
+  verification survives leaving and returning to that Space, and same-window
+  Space changes or windowed geometry clear stale trust.
 - GitHub Actions CI run
-  [`33407871757`](https://github.com/miles-chu10/TimeLedge/actions/runs/33407871757)
-  passed on macOS for commit `d6bcce4`: all 45 XCTest cases passed, the
+  [`33409556063`](https://github.com/miles-chu10/TimeLedge/actions/runs/33409556063)
+  passed on macOS for commit `dd47f60`: all 48 XCTest cases passed, the
   release-optimized app bundle built, app and privacy plist validation passed,
   ad-hoc `codesign --verify --deep --strict` passed, and the downloadable
   artifact uploaded.

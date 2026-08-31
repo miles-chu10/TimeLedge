@@ -19,7 +19,9 @@ Confirm the manifest declares `TimeLedgeCore`, `TimeLedge`, `TimeLedgeCoreTests`
 ## Live macOS matrix
 
 - [ ] Built-in display is enabled and external displays are disabled on first run
-- [ ] Clock ignores clicks and the menu-bar icon remains the recovery path
+- [ ] Menu-bar clock uses the selected format and opens the recovery menu
+- [ ] Turning Show Clock off collapses the menu-bar clock to the recovery icon
+- [ ] Overlay clock ignores clicks
 - [ ] Hidden menu bar reveals over the clock without an unreadable collision
 - [ ] Automatic mode shows for hidden-menu-bar and fullscreen evidence
 - [ ] Fullscreen Only mode fails closed without a verified Spaces/full-display

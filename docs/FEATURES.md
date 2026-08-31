@@ -14,7 +14,8 @@
 | Readability | Optional background per display with adjustable opacity | Store test plus runtime inspection |
 | Privacy-dot margin | Default and wide right margins | Placement tests plus camera/mic indicator check |
 | Window level | Over-apps and behind-apps choices | Static mapping review plus manual stacking check |
-| Low friction | Click-through overlay and menu-bar recovery path | Static panel review plus click test |
+| Visible menu bar | Shared formatter renders TimeLedge as a real `NSStatusItem` clock in the system-managed band | App test plus live menu-bar inspection |
+| Low friction | Click-through overlay and menu-bar clock/recovery path | Static panel review plus click test |
 | Persistence | Preferences and per-display choices survive relaunch | Store tests |
 | Reveal safety | Moving the pointer into the top reveal band suppresses the overlay briefly | Policy test plus manual pointer check |
 

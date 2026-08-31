@@ -19,6 +19,14 @@ TimeLedge
 └── Views/                   overlay and settings SwiftUI views
 ```
 
+## Menu-bar clock
+
+`StatusItemController` owns a variable-length `NSStatusItem` and renders the
+same `ClockFormatter` output used by the overlay. The system therefore hosts the
+visible-menu clock in the actual menu-bar band. Turning Show Clock off replaces
+the title with the compact recovery icon so settings and Quit remain reachable.
+The status item uses an autosave name so user positioning persists.
+
 ## Window contract
 
 Each enabled display owns one borderless, non-activating `NSPanel`:
@@ -41,8 +49,10 @@ the right of a notch, normalizes that area to the physical display edges, and
 anchors the clock immediately below the hidden system strip. This keeps the
 documented `.floating` level below protected menu-bar surfaces while Automatic
 mode removes the overlay whenever ordinary menu-bar/fullscreen evidence is
-absent. Coordinates remain in macOS global point space, including negative
-external-display coordinates.
+absent. Fullscreen coverage uses a separate hardware-notch inset so a maximized
+window below an ordinary visible menu bar cannot be mistaken for fullscreen.
+Coordinates remain in macOS global point space, including negative external-
+display coordinates.
 
 ## Visibility pipeline
 

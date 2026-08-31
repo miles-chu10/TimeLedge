@@ -1,4 +1,5 @@
 import AppKit
+import TimeLedgeCore
 
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
@@ -6,6 +7,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   private let statusItem: NSStatusItem
   private let onOpenSettings: () -> Void
   private let onSetLaunchAtLogin: (Bool) -> Void
+  private var clockTimer: Timer?
 
   private lazy var showClockItem = NSMenuItem(
     title: "Show Clock",
@@ -26,13 +28,20 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     self.store = store
     self.onOpenSettings = onOpenSettings
     self.onSetLaunchAtLogin = onSetLaunchAtLogin
-    statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     super.init()
 
-    statusItem.button?.image = NSImage(
-      systemSymbolName: "clock",
-      accessibilityDescription: "TimeLedge"
-    )
+    statusItem.autosaveName = "com.mileschu.TimeLedge.clock"
+    statusItem.button?.toolTip = "TimeLedge"
+    refresh()
+
+    let clockTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+      Task { @MainActor [weak self] in
+        self?.refresh()
+      }
+    }
+    RunLoop.main.add(clockTimer, forMode: .common)
+    self.clockTimer = clockTimer
 
     let menu = NSMenu()
     menu.delegate = self
@@ -61,7 +70,46 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     statusItem.menu = menu
   }
 
+  static func menuBarTitle(
+    at date: Date,
+    preferences: ClockPreferences,
+    isClockVisible: Bool
+  ) -> String? {
+    guard isClockVisible else { return nil }
+    return ClockFormatter.string(from: date, preferences: preferences)
+  }
+
+  func refresh() {
+    guard let button = statusItem.button else { return }
+    if let title = Self.menuBarTitle(
+      at: Date(),
+      preferences: store.preferences,
+      isClockVisible: store.preferences.isClockVisible
+    ) {
+      statusItem.length = NSStatusItem.variableLength
+      button.image = nil
+      button.imagePosition = .noImage
+      button.title = title
+      button.setAccessibilityLabel("TimeLedge \(title)")
+    } else {
+      statusItem.length = NSStatusItem.squareLength
+      button.title = ""
+      button.image = NSImage(
+        systemSymbolName: "clock",
+        accessibilityDescription: "TimeLedge"
+      )
+      button.imagePosition = .imageOnly
+      button.setAccessibilityLabel("TimeLedge")
+    }
+  }
+
+  func stop() {
+    clockTimer?.invalidate()
+    clockTimer = nil
+  }
+
   func menuNeedsUpdate(_ menu: NSMenu) {
+    refresh()
     showClockItem.state = store.preferences.isClockVisible ? .on : .off
     launchAtLoginItem.state = store.preferences.launchAtLogin ? .on : .off
   }

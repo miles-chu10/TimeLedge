@@ -47,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       self?.visibilityMonitor.appIsEnabled = self?.store.preferences.isClockVisible ?? false
       self?.visibilityMonitor.mode = self?.store.visibilityMode ?? .automatic
       self?.overlayCoordinator.applyPreferences()
+      self?.statusItemController.refresh()
     }
 
     visibilityMonitor.onChange = { [weak self] displayIDs in
@@ -78,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationWillTerminate(_ notification: Notification) {
+    statusItemController?.stop()
     visibilityMonitor?.stop()
     overlayCoordinator?.stop()
   }

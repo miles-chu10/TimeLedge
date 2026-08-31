@@ -15,8 +15,8 @@ with SwiftUI and AppKit and licensed under MIT.
 - System-locale and system-time-zone formatting
 - SF Pro, SF Rounded, and SF Mono designs; weight, size, color, and opacity
 - Default or wide right margin for the camera/microphone privacy indicator
-- Menu-bar controls, a native settings window, preference persistence, and
-  opt-in Launch at Login
+- A formatted clock hosted in the real menu-bar band, menu controls, a native
+  settings window, preference persistence, and opt-in Launch at Login
 - Original TimeLedge app icon and a privacy manifest declaring local-only
   UserDefaults access
 - No network requests, analytics, ads, accessibility permission, or screen
@@ -43,12 +43,13 @@ changed only when the user toggles it inside TimeLedge.
 ## Use
 
 1. Launch `dist/TimeLedge.app`.
-2. Look for the clock icon in the menu bar.
+2. Look for the formatted TimeLedge clock in the menu bar.
 3. Open **Settings…** to configure format, style, displays, and window level.
 4. Keep **Window level → Over Apps** selected for fullscreen visibility.
 
-The overlay ignores mouse events. Use the menu-bar icon to show, hide, configure,
-or quit TimeLedge.
+The overlay ignores mouse events. Click the menu-bar clock to show, hide,
+configure, or quit TimeLedge. Turning the clock off collapses the menu-bar item
+back to its recovery icon.
 
 ## Codex Cloud
 

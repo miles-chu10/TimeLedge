@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import TimeLedge
+@testable import TimeLedgeCore
 
 @MainActor
 final class PreferencesStoreTests: XCTestCase {

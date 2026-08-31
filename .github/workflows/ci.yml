@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: xcodebuild -version && xcrun swift --version
+      - name: Tests
+        run: ./script/ci-test.sh
+      - name: Build app bundle
+        run: ./script/ci-build.sh
+      - name: Verify bundle
+        run: |
+          plutil -lint dist/TimeLedge.app/Contents/Info.plist
+          codesign --verify --deep --strict dist/TimeLedge.app

@@ -59,9 +59,10 @@ GitHub Actions workflow or a local Mac with full Xcode.
 ## Verification status
 
 Automated tests cover formatting, persistence, display-default policy, and
-top-right geometry. The build script validates the app bundle and running
-process. Fullscreen Spaces, Mission Control, Stage Manager, display hot-plug,
-and notch/menu-bar interactions still require the manual matrix in
+top-right geometry. GitHub Actions runs the complete 29-test suite, builds the
+app bundle, validates its plist, and verifies its ad-hoc signature on macOS.
+Fullscreen Spaces, Mission Control, Stage Manager, display hot-plug, and
+notch/menu-bar interactions still require the manual matrix in
 [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) because AppKit window
 collection behavior cannot be proven by unit tests.
 

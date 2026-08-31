@@ -29,15 +29,18 @@ Verified 2026-08-30 on:
 - The live display list showed **Built-in Retina Display** enabled and the
   external **ASUS VG249** disabled by default.
 
-## Consolidation validation in progress
+## Consolidation validation passed
 
 - The earlier prototype's unique visibility policy and window-coverage evidence were
   ported under TimeLedge names; duplicated formatter, display, settings, panel,
   and overlay implementations were not copied.
 - New pure-policy tests cover automatic, fullscreen-only, always-visible,
   fail-closed, pointer-reveal, and window-coverage behavior.
-- The local machine currently has Command Line Tools but not full Xcode, so the
-  macOS GitHub Actions run is the authoritative build/test gate for this change.
+- GitHub Actions CI run `33355318703` passed on macOS for commit `cc4d969`:
+  all 29 XCTest cases passed, the app bundle built, `plutil -lint` passed, and
+  `codesign --verify --deep --strict` passed.
+- The local machine currently has Command Line Tools but not full Xcode; the
+  macOS GitHub Actions run is therefore the authoritative native build evidence.
 
 ## Static safety evidence
 

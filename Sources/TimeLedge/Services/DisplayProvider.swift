@@ -23,9 +23,46 @@ struct SystemDisplayProvider: DisplayProviding {
         displayID: displayID,
         isBuiltIn: CGDisplayIsBuiltin(displayID) != 0,
         frame: screen.frame,
-        topRightSafeArea: screen.auxiliaryTopRightArea
+        topRightSafeArea: Self.topRightPlacementBounds(
+          screenFrame: screen.frame,
+          safeAreaTop: screen.safeAreaInsets.top,
+          statusBarThickness: NSStatusBar.system.thickness,
+          auxiliaryTopRightArea: screen.auxiliaryTopRightArea
+        )
       )
     }
+  }
+
+  static func topRightPlacementBounds(
+    screenFrame: CGRect,
+    safeAreaTop: CGFloat,
+    statusBarThickness: CGFloat,
+    auxiliaryTopRightArea: CGRect?
+  ) -> CGRect {
+    if let area = auxiliaryTopRightArea, !area.isEmpty {
+      let height = min(max(1, area.height), screenFrame.height)
+      let minX = min(max(screenFrame.minX, area.minX), screenFrame.maxX - 1)
+      let width = min(max(1, area.width), screenFrame.maxX - minX)
+      return CGRect(
+        x: minX,
+        y: screenFrame.maxY - height,
+        width: width,
+        height: height
+      )
+    }
+
+    let height = min(
+      max(1, safeAreaTop, statusBarThickness),
+      screenFrame.height
+    )
+    let hasLikelyNotch = safeAreaTop > statusBarThickness + 1
+    let minX = hasLikelyNotch ? screenFrame.midX : screenFrame.minX
+    return CGRect(
+      x: minX,
+      y: screenFrame.maxY - height,
+      width: screenFrame.maxX - minX,
+      height: height
+    )
   }
 
   private func stableIdentifier(for displayID: CGDirectDisplayID) -> String {

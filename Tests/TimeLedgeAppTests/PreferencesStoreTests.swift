@@ -86,6 +86,39 @@ final class PreferencesStoreTests: XCTestCase {
     XCTAssertTrue(secondStore.preference(for: display.id).showsBackground)
   }
 
+  func testTopRightPlacementPinsLegacyAuxiliaryAreaToPhysicalTopEdge() {
+    let bounds = SystemDisplayProvider.topRightPlacementBounds(
+      screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+      safeAreaTop: 32,
+      statusBarThickness: 22,
+      auxiliaryTopRightArea: CGRect(x: 848.5, y: 918, width: 663.5, height: 32)
+    )
+
+    XCTAssertEqual(bounds, CGRect(x: 848.5, y: 950, width: 663.5, height: 32))
+  }
+
+  func testTopRightPlacementUsesRightHalfForNotchedScreenFallback() {
+    let bounds = SystemDisplayProvider.topRightPlacementBounds(
+      screenFrame: CGRect(x: -1512, y: 100, width: 1512, height: 982),
+      safeAreaTop: 32,
+      statusBarThickness: 22,
+      auxiliaryTopRightArea: nil
+    )
+
+    XCTAssertEqual(bounds, CGRect(x: -756, y: 1050, width: 756, height: 32))
+  }
+
+  func testTopRightPlacementUsesFullWidthForNonNotchedScreenFallback() {
+    let bounds = SystemDisplayProvider.topRightPlacementBounds(
+      screenFrame: CGRect(x: 0, y: -1080, width: 1920, height: 1080),
+      safeAreaTop: 0,
+      statusBarThickness: 24,
+      auxiliaryTopRightArea: nil
+    )
+
+    XCTAssertEqual(bounds, CGRect(x: 0, y: -24, width: 1920, height: 24))
+  }
+
   private func descriptor(id: String, builtIn: Bool) -> DisplayDescriptor {
     DisplayDescriptor(
       id: id,

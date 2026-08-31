@@ -91,7 +91,7 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
       safeAreaTop: 32,
       statusBarThickness: 22,
-      auxiliaryTopRightArea: CGRect(x: 848.5, y: 918, width: 663.5, height: 32)
+      auxiliaryTopRightArea: CGRect(x: -226, y: 918, width: 663.5, height: 32)
     )
 
     XCTAssertEqual(bounds, CGRect(x: 848.5, y: 950, width: 663.5, height: 32))

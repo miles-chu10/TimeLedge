@@ -41,10 +41,9 @@ struct SystemDisplayProvider: DisplayProviding {
   ) -> CGRect {
     if let area = auxiliaryTopRightArea, !area.isEmpty {
       let height = min(max(1, area.height), screenFrame.height)
-      let minX = min(max(screenFrame.minX, area.minX), screenFrame.maxX - 1)
-      let width = min(max(1, area.width), screenFrame.maxX - minX)
+      let width = min(max(1, area.width), screenFrame.width)
       return CGRect(
-        x: minX,
+        x: screenFrame.maxX - width,
         y: screenFrame.maxY - height,
         width: width,
         height: height

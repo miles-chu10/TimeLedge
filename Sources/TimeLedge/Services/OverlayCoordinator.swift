@@ -197,6 +197,6 @@ final class OverlayCoordinator {
     guard record.panel.frame != frame else {
       return
     }
-    record.panel.setFrame(frame, display: true)
+    record.panel.setOverlayFrame(frame, display: true)
   }
 }

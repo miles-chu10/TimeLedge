@@ -4,8 +4,15 @@ final class OverlayPanel: NSPanel {
   override var canBecomeKey: Bool { false }
   override var canBecomeMain: Bool { false }
 
+  private var requestedOverlayFrame: NSRect?
+
   override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
-    frameRect
+    requestedOverlayFrame ?? frameRect
+  }
+
+  func setOverlayFrame(_ frame: NSRect, display: Bool) {
+    requestedOverlayFrame = frame
+    setFrame(frame, display: display)
   }
 
   init() {

@@ -22,12 +22,12 @@ public enum OverlayPlacement {
       rightMargin: safeRightMargin
     )
     let width = min(max(1, contentSize.width), availableWidth)
-    let height = min(max(1, contentSize.height), max(1, placementBounds.height))
+    let height = max(1, contentSize.height)
     let x = placementBounds.maxX - safeRightMargin - width
     let y = placementBounds.maxY - topMargin - height
     return CGRect(
       x: max(placementBounds.minX, x),
-      y: max(placementBounds.minY, y),
+      y: y,
       width: width,
       height: height
     ).integral

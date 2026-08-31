@@ -19,13 +19,17 @@ TimeLedge
 └── Views/                   overlay and settings SwiftUI views
 ```
 
-## Menu-bar clock
+## Menu-bar item
 
-`StatusItemController` owns a variable-length `NSStatusItem` and renders the
-same `ClockFormatter` output used by the overlay. The system therefore hosts the
-visible-menu clock in the actual menu-bar band. Turning Show Clock off replaces
-the title with the compact recovery icon so settings and Quit remain reachable.
-The status item uses an autosave name so user positioning persists.
+TimeLedge shows exactly one clock, and the overlay is it. The system already
+draws a clock while the menu bar is visible, so `StatusItemController` owns a
+square `NSStatusItem` carrying identity and controls rather than a second time
+readout: the app icon, or the `clock` SF Symbol as a template fallback when no
+bundle icon is available. The configured `ClockFormatter` output stays on the
+button's accessibility label, so VoiceOver still reads the time. Because nothing
+in the item renders time, it has no per-second timer; `menuNeedsUpdate` refreshes
+the label when the menu opens. The status item uses an autosave name so user
+positioning persists.
 
 ## Window contract
 
@@ -44,15 +48,33 @@ content while remaining below the system menu bar when it reappears. `Behind
 Apps` uses `.normal` and orders the panel behind normal windows. The app
 intentionally avoids status-bar/screen-saver levels and private window APIs.
 
-The display provider uses `NSScreen.auxiliaryTopRightArea` to keep the clock to
-the right of a notch, normalizes that area to the physical display edges, and
-anchors the clock immediately below the hidden system strip. This keeps the
-documented `.floating` level below protected menu-bar surfaces while Automatic
-mode removes the overlay whenever ordinary menu-bar/fullscreen evidence is
-absent. Fullscreen coverage uses a separate hardware-notch inset so a maximized
-window below an ordinary visible menu bar cannot be mistaken for fullscreen.
-Coordinates remain in macOS global point space, including negative external-
-display coordinates.
+## Menu-bar band geometry
+
+`placementBounds` is the menu-bar band itself — the strip the system menu bar
+occupies at the very top of a display — and `OverlayPlacement.frame` centers the
+clock inside it. That puts TimeLedge on the same line the system clock uses,
+which is the whole point of the product; anchoring below the band's bottom edge
+put the clock a full menu-bar height too low.
+
+The band height comes from the best available source per display:
+
+- notched displays use `NSScreen.auxiliaryTopRightArea`, which also keeps the
+  clock to the right of the notch
+- other displays use the gap the menu bar leaves at the top of `visibleFrame`,
+  falling back to `NSStatusBar.system.thickness` only when nothing better has
+  been observed
+
+A fullscreen Space hides the menu bar, which collapses that gap to zero, so
+`SystemDisplayProvider` caches the largest height it has seen per display and
+reuses it once the bar is gone.
+
+Drawing inside the band does not raise the window level: `.floating` stays the
+ceiling, and the real menu bar still renders above the overlay if both are on
+screen. Automatic mode removes the overlay whenever ordinary menu-bar or
+fullscreen evidence is absent, so the two do not compete. Fullscreen coverage
+uses a separate hardware-notch inset so a maximized window below an ordinary
+visible menu bar cannot be mistaken for fullscreen. Coordinates remain in macOS
+global point space, including negative external-display coordinates.
 
 ## Visibility pipeline
 

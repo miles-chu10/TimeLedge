@@ -6,7 +6,8 @@ with SwiftUI and AppKit and licensed under MIT.
 
 ## What works
 
-- Click-through, non-activating clock overlay above fullscreen apps
+- Click-through, non-activating clock overlay that draws inside the real
+  menu-bar band, on the same line as the system clock, above fullscreen apps
 - Automatic visibility when the menu bar is hidden, including fullscreen
   Spaces, with fullscreen-only and always-visible modes
 - Built-in Mac display enabled by default; external displays are opt-in
@@ -15,8 +16,9 @@ with SwiftUI and AppKit and licensed under MIT.
 - System-locale and system-time-zone formatting
 - SF Pro, SF Rounded, and SF Mono designs; weight, size, color, and opacity
 - Default or wide right margin for the camera/microphone privacy indicator
-- A formatted clock hosted in the real menu-bar band, menu controls, a native
-  settings window, preference persistence, and opt-in Launch at Login
+- A menu-bar item carrying the app icon and controls — show/hide, Settings,
+  Launch at Login, Quit — plus a native settings window and preference
+  persistence
 - Original TimeLedge app icon and a privacy manifest declaring local-only
   UserDefaults access
 - No network requests, analytics, ads, accessibility permission, or screen
@@ -43,13 +45,14 @@ changed only when the user toggles it inside TimeLedge.
 ## Use
 
 1. Launch `dist/TimeLedge.app`.
-2. Look for the formatted TimeLedge clock in the menu bar.
+2. Look for the TimeLedge icon in the menu bar.
 3. Open **Settings…** to configure format, style, displays, and window level.
 4. Keep **Window level → Over Apps** selected for fullscreen visibility.
 
-The overlay ignores mouse events. Click the menu-bar clock to show, hide,
-configure, or quit TimeLedge. Turning the clock off collapses the menu-bar item
-back to its recovery icon.
+TimeLedge shows exactly one clock. The system draws it while the menu bar is
+visible; TimeLedge draws it in the same place once the menu bar is gone. The
+overlay ignores mouse events. Click the menu-bar icon to show, hide, configure,
+or quit TimeLedge.
 
 ## Codex Cloud
 

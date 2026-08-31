@@ -4,7 +4,6 @@ import TimeLedgeCore
 @MainActor
 final class FullscreenVisibilityMonitor: NSObject {
   var onChange: ((Set<String>) -> Void)?
-  var menuBarItemVisibility: ((CGDirectDisplayID) -> Bool?)?
 
   var appIsEnabled = true {
     didSet { evaluate(force: true) }
@@ -16,6 +15,7 @@ final class FullscreenVisibilityMonitor: NSObject {
 
   private let displayProvider: DisplayProviding
   private let probe = FrontmostWindowProbe()
+  private var transitionDetector = FullscreenTransitionDetector()
   private var timer: Timer?
   private var sessionIsActive = true
   private var revealHoldUntil: [String: Date] = [:]
@@ -29,7 +29,7 @@ final class FullscreenVisibilityMonitor: NSObject {
     let workspaceCenter = NSWorkspace.shared.notificationCenter
     workspaceCenter.addObserver(
       self,
-      selector: #selector(environmentChanged),
+      selector: #selector(activeSpaceDidChange),
       name: NSWorkspace.activeSpaceDidChangeNotification,
       object: nil
     )
@@ -101,6 +101,11 @@ final class FullscreenVisibilityMonitor: NSObject {
     evaluate(force: true)
   }
 
+  @objc private func activeSpaceDidChange() {
+    transitionDetector.noteSpaceChange(at: Date.timeIntervalSinceReferenceDate)
+    evaluate(force: true)
+  }
+
   @objc private func sessionDidResign() {
     sessionIsActive = false
     evaluate(force: true)
@@ -115,16 +120,34 @@ final class FullscreenVisibilityMonitor: NSObject {
     let displays = displayProvider.currentDisplays()
     let now = Date()
     let pointer = NSEvent.mouseLocation
-    let coveredDisplayIDs: Set<String>
+    let observations: [FrontmostWindowObservation]
 
     if let frontmostApplication = NSWorkspace.shared.frontmostApplication {
-      coveredDisplayIDs = probe.coveredDisplayIDs(
-        processIdentifier: frontmostApplication.processIdentifier,
-        displays: displays
+      observations = probe.observations(
+        processIdentifier: frontmostApplication.processIdentifier
       )
     } else {
-      coveredDisplayIDs = []
+      observations = []
     }
+
+    let coverageSnapshots = observations.map { observation in
+      WindowCoverageSnapshot(
+        identity: observation.identity,
+        coveredDisplayIDs: Set(
+          displays.compactMap { display in
+            WindowCoverage.coversDisplay(
+              windowBounds: observation.bounds,
+              displayBounds: CGDisplayBounds(display.displayID),
+              allowedTopInset: display.topRightSafeArea?.height ?? 0
+            ) ? display.id : nil
+          }
+        )
+      )
+    }
+    let coveredDisplayIDs = transitionDetector.update(
+      snapshots: coverageSnapshots,
+      at: now.timeIntervalSinceReferenceDate
+    )
 
     let visibleDisplayIDs = Set(
       displays.compactMap { display -> String? in
@@ -144,9 +167,7 @@ final class FullscreenVisibilityMonitor: NSObject {
           appIsEnabled: appIsEnabled,
           sessionIsActive: sessionIsActive,
           displayIsAvailable: true,
-          menuBarIsHiddenByGeometry:
-            abs(screen.frame.maxY - screen.visibleFrame.maxY) <= 1
-            || menuBarItemVisibility?(display.displayID) == false,
+          menuBarIsHiddenByGeometry: abs(screen.frame.maxY - screen.visibleFrame.maxY) <= 1,
           frontmostWindowCoversDisplay: coveredDisplayIDs.contains(display.id),
           pointerIsRevealingMenuBar: now < revealHoldUntil[display.id, default: .distantPast]
         )

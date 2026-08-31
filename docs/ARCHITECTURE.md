@@ -48,14 +48,16 @@ external-display coordinates.
 
 `FullscreenVisibilityMonitor` observes active Spaces, app activation,
 session/sleep state, and display changes, with a 250 ms poll for window geometry
-changes that have no reliable notification. It combines menu-bar geometry,
-frontmost layer-0 window coverage, the display's notch-safe top inset, and a
-short pointer-reveal hold through the pure `ClockVisibilityPolicy`.
+changes that have no reliable notification. A pure transition detector trusts
+notch-safe frontmost-window coverage only when the same window was recently
+noncovering and then changed during a Spaces transition. The monitor combines
+that verified evidence with menu-bar geometry and a short pointer-reveal hold
+through the pure `ClockVisibilityPolicy`.
 
-The default mode shows an enabled display only when its menu bar is hidden,
-including in fullscreen Spaces. `Fullscreen Only` additionally requires that
-the frontmost app own a layer-0 window covering the display. `Always`
-preserves the original persistent-overlay behavior while the session is active.
+The default mode shows an enabled display when its menu bar is hidden or a
+verified fullscreen transition covers it. `Fullscreen Only` requires the
+verified transition. `Always` preserves the original persistent-overlay
+behavior while the session is active.
 Session inactivity, a
 missing display, and the global Show Clock toggle fail closed. Automatic modes
 also suppress the overlay during pointer-based menu-bar reveal.

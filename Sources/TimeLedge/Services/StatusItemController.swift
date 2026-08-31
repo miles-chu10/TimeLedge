@@ -1,5 +1,4 @@
 import AppKit
-import CoreGraphics
 
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
@@ -7,7 +6,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   private let statusItem: NSStatusItem
   private let onOpenSettings: () -> Void
   private let onSetLaunchAtLogin: (Bool) -> Void
-  private var lastMenuBarDisplayID: CGDirectDisplayID?
 
   private lazy var showClockItem = NSMenuItem(
     title: "Show Clock",
@@ -19,31 +17,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     action: #selector(toggleLaunchAtLogin),
     keyEquivalent: ""
   )
-
-  func isVisibleInMenuBar(on displayID: CGDirectDisplayID) -> Bool? {
-    guard let window = statusItem.button?.window else {
-      return nil
-    }
-
-    if let currentDisplayID = window.screen.flatMap(Self.displayID(for:)) {
-      lastMenuBarDisplayID = currentDisplayID
-    } else if lastMenuBarDisplayID == nil {
-      lastMenuBarDisplayID = NSScreen.main.flatMap(Self.displayID(for:))
-    }
-
-    guard lastMenuBarDisplayID == displayID else { return nil }
-    return window.isVisible && window.occlusionState.contains(.visible)
-  }
-
-  private static func displayID(for screen: NSScreen) -> CGDirectDisplayID? {
-    guard
-      let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
-        as? NSNumber
-    else {
-      return nil
-    }
-    return CGDirectDisplayID(number.uint32Value)
-  }
 
   init(
     store: PreferencesStore,

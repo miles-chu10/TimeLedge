@@ -4,8 +4,8 @@
 
 | Capability | TimeLedge contract | Evidence gate |
 | --- | --- | --- |
-| Hidden menu bar | Automatic mode shows the clock only after per-display status-item/geometry evidence says the menu bar is hidden | Policy tests plus manual hidden-menu-bar check |
-| Fullscreen | Fullscreen Only combines hidden-menu-bar evidence with frontmost-window coverage, which may exclude the documented notch-safe top strip | Policy/coverage tests plus manual Safari/QuickTime check |
+| Hidden menu bar | Automatic mode shows the clock when per-display geometry says the menu bar is hidden | Policy tests plus manual hidden-menu-bar check |
+| Fullscreen | A Spaces change plus a recent ordinary-to-full-display window transition verifies fullscreen without Accessibility permission | Transition/coverage tests plus manual Safari/QuickTime check |
 | Built-in display | Built-in display is enabled by default | Unit test plus runtime settings list |
 | Multiple displays | Connected displays are detected and enabled independently | Unit policy test plus hot-plug check |
 | Format | 12/24-hour, seconds, date, weekday, and custom pattern | Formatter tests |

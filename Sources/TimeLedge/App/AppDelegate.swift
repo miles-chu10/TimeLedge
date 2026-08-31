@@ -43,10 +43,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       }
     )
 
-    visibilityMonitor.menuBarItemVisibility = { [weak self] displayID in
-      self?.statusItemController?.isVisibleInMenuBar(on: displayID)
-    }
-
     store.changeHandler = { [weak self] in
       self?.visibilityMonitor.appIsEnabled = self?.store.preferences.isClockVisible ?? false
       self?.visibilityMonitor.mode = self?.store.visibilityMode ?? .automatic

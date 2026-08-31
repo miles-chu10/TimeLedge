@@ -2,11 +2,13 @@ import CoreGraphics
 import Foundation
 import TimeLedgeCore
 
+struct FrontmostWindowObservation {
+  let identity: WindowIdentity
+  let bounds: CGRect
+}
+
 struct FrontmostWindowProbe {
-  func coveredDisplayIDs(
-    processIdentifier: pid_t,
-    displays: [DisplayDescriptor]
-  ) -> Set<String> {
+  func observations(processIdentifier: pid_t) -> [FrontmostWindowObservation] {
     guard processIdentifier > 0,
       let windowList = CGWindowListCopyWindowInfo(
         [.optionOnScreenOnly, .excludeDesktopElements],
@@ -16,11 +18,12 @@ struct FrontmostWindowProbe {
       return []
     }
 
-    let candidateBounds = windowList.compactMap { window -> CGRect? in
+    return windowList.compactMap { window -> FrontmostWindowObservation? in
       guard
         (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value
           == processIdentifier,
-        (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0
+        (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
+        let windowNumber = (window[kCGWindowNumber as String] as? NSNumber)?.uint32Value
       else {
         return nil
       }
@@ -35,18 +38,13 @@ struct FrontmostWindowProbe {
       else {
         return nil
       }
-      return CGRect(x: x, y: y, width: width, height: height)
+      return FrontmostWindowObservation(
+        identity: WindowIdentity(
+          ownerProcessIdentifier: processIdentifier,
+          windowNumber: windowNumber
+        ),
+        bounds: CGRect(x: x, y: y, width: width, height: height)
+      )
     }
-
-    return Set(
-      displays.compactMap { display in
-        candidateBounds.contains(where: {
-          WindowCoverage.coversDisplay(
-            windowBounds: $0,
-            displayBounds: CGDisplayBounds(display.displayID),
-            allowedTopInset: display.topRightSafeArea?.height ?? 0
-          )
-        }) ? display.id : nil
-      })
   }
 }

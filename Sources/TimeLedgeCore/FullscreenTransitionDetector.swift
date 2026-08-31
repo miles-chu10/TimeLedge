@@ -26,15 +26,20 @@ public struct FullscreenTransitionDetector: Sendable {
   private var verifiedFullscreenWindows: Set<WindowIdentity> = []
   private var transitionStartedAt: TimeInterval?
   private var transitionDeadline: TimeInterval?
+  private var windowIdentitiesBeforeSpaceChange: Set<WindowIdentity> = []
+  private var needsSpaceContinuityCheck = false
 
   public init() {}
 
   public mutating func noteSpaceChange(
     at time: TimeInterval,
+    previousWindowIdentities: Set<WindowIdentity> = [],
     transitionWindow: TimeInterval = 5
   ) {
     transitionStartedAt = time
     transitionDeadline = time + max(0, transitionWindow)
+    windowIdentitiesBeforeSpaceChange = previousWindowIdentities
+    needsSpaceContinuityCheck = true
   }
 
   public mutating func update(
@@ -45,6 +50,17 @@ public struct FullscreenTransitionDetector: Sendable {
     if let deadline = transitionDeadline, time > deadline {
       transitionStartedAt = nil
       transitionDeadline = nil
+    }
+
+    if needsSpaceContinuityCheck, !snapshots.isEmpty {
+      let currentWindowIdentities = Set(snapshots.map(\.identity))
+      let identitiesThatStayedFrontmost =
+        windowIdentitiesBeforeSpaceChange
+        .intersection(currentWindowIdentities)
+        .intersection(verifiedFullscreenWindows)
+      verifiedFullscreenWindows.subtract(identitiesThatStayedFrontmost)
+      needsSpaceContinuityCheck = false
+      windowIdentitiesBeforeSpaceChange = []
     }
 
     var coveredDisplayIDs: Set<String> = []

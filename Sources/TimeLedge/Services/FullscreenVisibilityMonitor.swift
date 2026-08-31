@@ -20,6 +20,7 @@ final class FullscreenVisibilityMonitor: NSObject {
   private var sessionIsActive = true
   private var revealHoldUntil: [String: Date] = [:]
   private var lastVisibleDisplayIDs: Set<String>?
+  private var lastObservedWindowIdentities: Set<WindowIdentity> = []
 
   init(displayProvider: DisplayProviding) {
     self.displayProvider = displayProvider
@@ -102,7 +103,10 @@ final class FullscreenVisibilityMonitor: NSObject {
   }
 
   @objc private func activeSpaceDidChange() {
-    transitionDetector.noteSpaceChange(at: Date.timeIntervalSinceReferenceDate)
+    transitionDetector.noteSpaceChange(
+      at: Date.timeIntervalSinceReferenceDate,
+      previousWindowIdentities: lastObservedWindowIdentities
+    )
     evaluate(force: true)
   }
 
@@ -148,6 +152,7 @@ final class FullscreenVisibilityMonitor: NSObject {
       snapshots: coverageSnapshots,
       at: now.timeIntervalSinceReferenceDate
     )
+    lastObservedWindowIdentities = Set(observations.map(\.identity))
 
     let visibleDisplayIDs = Set(
       displays.compactMap { display -> String? in

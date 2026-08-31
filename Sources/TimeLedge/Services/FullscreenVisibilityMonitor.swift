@@ -142,7 +142,7 @@ final class FullscreenVisibilityMonitor: NSObject {
             WindowCoverage.coversDisplay(
               windowBounds: observation.bounds,
               displayBounds: CGDisplayBounds(display.displayID),
-              allowedTopInset: display.topRightSafeArea?.height ?? 0
+              allowedTopInset: display.fullscreenTopInset
             ) ? display.id : nil
           }
         )

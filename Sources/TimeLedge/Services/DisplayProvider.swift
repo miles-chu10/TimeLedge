@@ -28,9 +28,20 @@ struct SystemDisplayProvider: DisplayProviding {
           safeAreaTop: screen.safeAreaInsets.top,
           statusBarThickness: NSStatusBar.system.thickness,
           auxiliaryTopRightArea: screen.auxiliaryTopRightArea
+        ),
+        fullscreenTopInset: Self.fullscreenTopInset(
+          safeAreaTop: screen.safeAreaInsets.top,
+          statusBarThickness: NSStatusBar.system.thickness
         )
       )
     }
+  }
+
+  static func fullscreenTopInset(
+    safeAreaTop: CGFloat,
+    statusBarThickness: CGFloat
+  ) -> CGFloat {
+    safeAreaTop > statusBarThickness + 1 ? safeAreaTop : 0
   }
 
   static func topRightPlacementBounds(
@@ -54,7 +65,11 @@ struct SystemDisplayProvider: DisplayProviding {
       max(1, safeAreaTop, statusBarThickness),
       screenFrame.height
     )
-    let hasLikelyNotch = safeAreaTop > statusBarThickness + 1
+    let hasLikelyNotch =
+      fullscreenTopInset(
+        safeAreaTop: safeAreaTop,
+        statusBarThickness: statusBarThickness
+      ) > 0
     let minX = hasLikelyNotch ? screenFrame.midX : screenFrame.minX
     return CGRect(
       x: minX,

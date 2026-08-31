@@ -5,6 +5,18 @@ import XCTest
 
 @MainActor
 final class StatusItemControllerTests: XCTestCase {
+  func testControllerKeepsTheRecoveryItemVisible() {
+    let defaults = UserDefaults(suiteName: "TimeLedgeTests.\(UUID().uuidString)")!
+    let controller = StatusItemController(
+      store: PreferencesStore(defaults: defaults),
+      onOpenSettings: {},
+      onSetLaunchAtLogin: { _ in }
+    )
+
+    XCTAssertTrue(controller.isStatusItemVisible)
+    controller.stop()
+  }
+
   func testVisibleClockUsesTheSharedFormatter() {
     let date = Date(timeIntervalSince1970: 1_000_000)
     let preferences = ClockPreferences.defaults

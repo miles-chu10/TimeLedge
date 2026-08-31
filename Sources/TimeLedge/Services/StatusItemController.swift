@@ -32,6 +32,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     super.init()
 
     statusItem.autosaveName = "com.mileschu.TimeLedge.clock"
+    statusItem.isVisible = true
     statusItem.button?.toolTip = "TimeLedge"
     refresh()
 
@@ -106,7 +107,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   func stop() {
     clockTimer?.invalidate()
     clockTimer = nil
+    NSStatusBar.system.removeStatusItem(statusItem)
   }
+
+  var isStatusItemVisible: Bool { statusItem.isVisible }
 
   func menuNeedsUpdate(_ menu: NSMenu) {
     refresh()

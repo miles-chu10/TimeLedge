@@ -119,6 +119,26 @@ final class PreferencesStoreTests: XCTestCase {
     XCTAssertEqual(bounds, CGRect(x: 0, y: -24, width: 1920, height: 24))
   }
 
+  func testFullscreenEvidenceDoesNotIgnoreVisibleMenuBarOnNonNotchedDisplay() {
+    XCTAssertEqual(
+      SystemDisplayProvider.fullscreenTopInset(
+        safeAreaTop: 24,
+        statusBarThickness: 24
+      ),
+      0
+    )
+  }
+
+  func testFullscreenEvidenceAllowsHardwareSafeAreaOnNotchedDisplay() {
+    XCTAssertEqual(
+      SystemDisplayProvider.fullscreenTopInset(
+        safeAreaTop: 32,
+        statusBarThickness: 22
+      ),
+      32
+    )
+  }
+
   func testDisplayPlacementAnchorsBelowSystemTopStrip() {
     let display = DisplayDescriptor(
       id: "built-in",

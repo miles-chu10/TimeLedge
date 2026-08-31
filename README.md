@@ -7,8 +7,8 @@ with SwiftUI and AppKit and licensed under MIT.
 ## What works
 
 - Click-through, non-activating clock overlay above fullscreen apps
-- Automatic visibility when the menu bar is hidden or a frontmost app fills the
-  display, with fullscreen-only and always-visible modes
+- Automatic visibility when the menu bar is hidden, including fullscreen
+  Spaces, with fullscreen-only and always-visible modes
 - Built-in Mac display enabled by default; external displays are opt-in
 - Automatic display discovery and per-display readable backgrounds
 - 12/24-hour time, seconds, date, weekday, and custom DateFormatter patterns

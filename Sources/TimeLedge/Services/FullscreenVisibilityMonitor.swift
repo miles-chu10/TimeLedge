@@ -4,6 +4,7 @@ import TimeLedgeCore
 @MainActor
 final class FullscreenVisibilityMonitor: NSObject {
   var onChange: ((Set<String>) -> Void)?
+  var menuBarItemVisibility: ((CGDirectDisplayID) -> Bool?)?
 
   var appIsEnabled = true {
     didSet { evaluate(force: true) }
@@ -143,7 +144,9 @@ final class FullscreenVisibilityMonitor: NSObject {
           appIsEnabled: appIsEnabled,
           sessionIsActive: sessionIsActive,
           displayIsAvailable: true,
-          menuBarIsHiddenByGeometry: abs(screen.frame.maxY - screen.visibleFrame.maxY) <= 1,
+          menuBarIsHiddenByGeometry:
+            abs(screen.frame.maxY - screen.visibleFrame.maxY) <= 1
+            || menuBarItemVisibility?(display.displayID) == false,
           frontmostWindowCoversDisplay: coveredDisplayIDs.contains(display.id),
           pointerIsRevealingMenuBar: now < revealHoldUntil[display.id, default: .distantPast]
         )

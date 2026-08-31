@@ -52,10 +52,11 @@ changes that have no reliable notification. It combines menu-bar geometry,
 frontmost layer-0 window coverage, the display's notch-safe top inset, and a
 short pointer-reveal hold through the pure `ClockVisibilityPolicy`.
 
-The default mode shows an enabled display when its menu bar is hidden or the
-frontmost app owns a layer-0 window covering the display. `Fullscreen Only`
-requires that full-display window evidence. `Always`
-preserves the original persistent-overlay behavior. Session inactivity, a
+The default mode shows an enabled display only when its menu bar is hidden,
+including in fullscreen Spaces. `Fullscreen Only` additionally requires that
+the frontmost app own a layer-0 window covering the display. `Always`
+preserves the original persistent-overlay behavior while the session is active.
+Session inactivity, a
 missing display, and the global Show Clock toggle fail closed. Automatic modes
 also suppress the overlay during pointer-based menu-bar reveal.
 

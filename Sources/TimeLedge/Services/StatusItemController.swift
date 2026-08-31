@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
@@ -17,6 +18,18 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     action: #selector(toggleLaunchAtLogin),
     keyEquivalent: ""
   )
+
+  func isVisibleInMenuBar(on displayID: CGDirectDisplayID) -> Bool? {
+    guard let window = statusItem.button?.window,
+      let screen = window.screen,
+      let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+        as? NSNumber,
+      CGDirectDisplayID(number.uint32Value) == displayID
+    else {
+      return nil
+    }
+    return window.isVisible && window.occlusionState.contains(.visible)
+  }
 
   init(
     store: PreferencesStore,

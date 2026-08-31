@@ -22,7 +22,8 @@ Confirm the manifest declares `TimeLedgeCore`, `TimeLedge`, `TimeLedgeCoreTests`
 - [ ] Clock ignores clicks and the menu-bar icon remains the recovery path
 - [ ] Hidden menu bar reveals over the clock without an unreadable collision
 - [ ] Automatic mode shows for hidden-menu-bar and fullscreen evidence
-- [ ] Fullscreen Only mode fails closed without frontmost full-display evidence
+- [ ] Fullscreen Only mode fails closed without both hidden-menu-bar and
+      frontmost full-display evidence
 - [ ] Always mode preserves the enabled-display overlay behavior
 - [ ] Safari native fullscreen keeps the clock visible
 - [ ] QuickTime or another native fullscreen app keeps the clock visible

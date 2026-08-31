@@ -96,9 +96,7 @@ final class OverlayCoordinator {
 
     for display in store.displays {
       let displayPreference = store.preference(for: display.id)
-      let modeAllowsDisplay =
-        store.visibilityMode == .always
-        || automaticallyVisibleDisplayIDs.contains(display.id)
+      let modeAllowsDisplay = automaticallyVisibleDisplayIDs.contains(display.id)
       guard displayPreference.isEnabled, modeAllowsDisplay else {
         records[display.id]?.panel.orderOut(nil)
         continue
@@ -184,7 +182,7 @@ final class OverlayCoordinator {
       let display = store.displays.first(where: { $0.id == displayID }),
       let record = records[displayID],
       store.preference(for: displayID).isEnabled,
-      store.visibilityMode == .always || automaticallyVisibleDisplayIDs.contains(displayID)
+      automaticallyVisibleDisplayIDs.contains(displayID)
     else {
       return
     }

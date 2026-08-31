@@ -24,3 +24,17 @@ jobs:
         run: |
           plutil -lint dist/TimeLedge.app/Contents/Info.plist
           codesign --verify --deep --strict dist/TimeLedge.app
+          test -f dist/TimeLedge.app/Contents/Resources/TimeLedge.icns
+          plutil -lint dist/TimeLedge.app/Contents/Resources/PrivacyInfo.xcprivacy
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/TimeLedge.app/Contents/Info.plist)" = "TimeLedge.icns"
+      - name: Package app bundle
+        if: github.event_name == 'push'
+        run: ditto -c -k --sequesterRsrc --keepParent dist/TimeLedge.app TimeLedge-macOS.zip
+      - name: Upload app bundle
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: TimeLedge-macOS
+          path: TimeLedge-macOS.zip
+          if-no-files-found: error
+          retention-days: 7

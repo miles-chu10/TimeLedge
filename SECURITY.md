@@ -8,6 +8,7 @@ does not request Screen Recording permission.
 
 Launch at Login uses Apple's `SMAppService.mainApp` only after an explicit user
 toggle. Preferences are stored in the app's `UserDefaults` domain.
+`PrivacyInfo.xcprivacy` declares no tracking and no collected data.
 
 Report security issues through GitHub private vulnerability reporting. Do not
 open a public issue containing secrets, private screen content, or unredacted

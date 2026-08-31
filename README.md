@@ -17,6 +17,7 @@ with SwiftUI and AppKit and licensed under MIT.
 - Default or wide right margin for the camera/microphone privacy indicator
 - Menu-bar controls, a native settings window, preference persistence, and
   opt-in Launch at Login
+- Original TimeLedge app icon and a bundled no-data privacy manifest
 - No network requests, analytics, ads, accessibility permission, or screen
   recording permission
 

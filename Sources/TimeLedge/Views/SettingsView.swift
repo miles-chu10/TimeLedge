@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import TimeLedgeCore
 
@@ -79,9 +80,11 @@ struct SettingsView: View {
 
   private var header: some View {
     HStack(spacing: 12) {
-      Image(systemName: "clock.badge.checkmark")
-        .font(.system(size: 28))
-        .foregroundColor(.accentColor)
+      Image(nsImage: NSApplication.shared.applicationIconImage)
+        .resizable()
+        .interpolation(.high)
+        .frame(width: 44, height: 44)
+        .accessibilityHidden(true)
       VStack(alignment: .leading, spacing: 2) {
         Text("TimeLedge")
           .font(.title2.weight(.semibold))

@@ -12,3 +12,5 @@
 - Consolidated automatic hidden-menu-bar/fullscreen detection from the earlier
   prototype under the canonical TimeLedge name
 - Added public-repository CI and Codex Cloud setup/maintenance scaffolding
+- Added the original TimeLedge app icon, bundle icon metadata, privacy manifest,
+  and downloadable CI app artifact

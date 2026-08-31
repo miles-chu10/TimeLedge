@@ -3,7 +3,7 @@ version = 1
 name = "TimeLedge"
 
 [setup]
-script = ""
+script = "./script/codex-cloud-setup.sh"
 
 [[actions]]
 name = "Run"

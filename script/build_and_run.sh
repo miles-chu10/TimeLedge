@@ -12,8 +12,11 @@ DIST_DIR="$ROOT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 APP_CONTENTS="$APP_BUNDLE/Contents"
 APP_MACOS="$APP_CONTENTS/MacOS"
+APP_RESOURCES="$APP_CONTENTS/Resources"
 APP_BINARY="$APP_MACOS/$APP_NAME"
 INFO_PLIST="$APP_CONTENTS/Info.plist"
+ICON_FILE="$ROOT_DIR/Resources/TimeLedge.icns"
+PRIVACY_FILE="$ROOT_DIR/Resources/PrivacyInfo.xcprivacy"
 MODULE_CACHE="$ROOT_DIR/.build/codex-module-cache"
 SWIFT=(/usr/bin/xcrun swift)
 
@@ -37,9 +40,13 @@ fi
 "${SWIFT[@]}" "${SWIFT_BUILD_ARGS[@]}"
 BUILD_BINARY="$("${SWIFT[@]}" build --show-bin-path)/$APP_NAME"
 
+test -f "$ICON_FILE"
+test -f "$PRIVACY_FILE"
 rm -rf "$APP_BUNDLE"
-mkdir -p "$APP_MACOS"
+mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 cp "$BUILD_BINARY" "$APP_BINARY"
+cp "$ICON_FILE" "$APP_RESOURCES/TimeLedge.icns"
+cp "$PRIVACY_FILE" "$APP_RESOURCES/PrivacyInfo.xcprivacy"
 chmod +x "$APP_BINARY"
 
 cat >"$INFO_PLIST" <<PLIST
@@ -53,6 +60,10 @@ cat >"$INFO_PLIST" <<PLIST
   <string>$APP_NAME</string>
   <key>CFBundleIdentifier</key>
   <string>$BUNDLE_ID</string>
+  <key>CFBundleIconFile</key>
+  <string>TimeLedge.icns</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
   <key>CFBundleName</key>
   <string>$APP_NAME</string>
   <key>CFBundlePackageType</key>
@@ -69,6 +80,8 @@ cat >"$INFO_PLIST" <<PLIST
   <true/>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>NSHumanReadableCopyright</key>
+  <string>Copyright © 2026 TimeLedge contributors</string>
   <key>NSPrincipalClass</key>
   <string>NSApplication</string>
 </dict>

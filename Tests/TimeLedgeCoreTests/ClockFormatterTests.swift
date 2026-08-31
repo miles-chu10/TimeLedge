@@ -83,16 +83,14 @@ final class ClockFormatterTests: XCTestCase {
     preferences.showDate = false
     preferences.showWeekday = false
 
-    XCTAssertEqual(
-      ClockFormatter.string(
-        from: date,
-        preferences: preferences,
-        locale: locale,
-        timeZone: timeZone,
-        calendar: calendar
-      ),
-      "09:05"
+    let value = ClockFormatter.string(
+      from: date,
+      preferences: preferences,
+      locale: locale,
+      timeZone: timeZone,
+      calendar: calendar
     )
+    XCTAssertEqual(value.replacingOccurrences(of: "\u{202F}", with: " "), "9:05 AM")
   }
 
   func testOverlongCustomFormatFallsBackToStandardFormat() {

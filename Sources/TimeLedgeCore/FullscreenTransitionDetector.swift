@@ -22,6 +22,7 @@ public struct WindowCoverageSnapshot: Equatable, Sendable {
 
 public struct FullscreenTransitionDetector: Sendable {
   private var lastNoncoveringObservation: [WindowIdentity: TimeInterval] = [:]
+  private var currentlyCoveringWindows: Set<WindowIdentity> = []
   private var verifiedFullscreenWindows: Set<WindowIdentity> = []
   private var transitionStartedAt: TimeInterval?
   private var transitionDeadline: TimeInterval?
@@ -51,13 +52,17 @@ public struct FullscreenTransitionDetector: Sendable {
     for snapshot in snapshots {
       if snapshot.coveredDisplayIDs.isEmpty {
         lastNoncoveringObservation[snapshot.identity] = time
+        currentlyCoveringWindows.remove(snapshot.identity)
         verifiedFullscreenWindows.remove(snapshot.identity)
         continue
       }
 
-      if !verifiedFullscreenWindows.contains(snapshot.identity),
+      let beganCovering = currentlyCoveringWindows.insert(snapshot.identity).inserted
+      if beganCovering,
+        !verifiedFullscreenWindows.contains(snapshot.identity),
         let transitionStartedAt,
         let transitionDeadline,
+        time >= transitionStartedAt,
         time <= transitionDeadline,
         let lastNoncovering = lastNoncoveringObservation[snapshot.identity],
         lastNoncovering >= transitionStartedAt - max(0, lookback)

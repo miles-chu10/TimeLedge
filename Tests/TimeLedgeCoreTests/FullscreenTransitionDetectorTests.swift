@@ -37,6 +37,18 @@ final class FullscreenTransitionDetectorTests: XCTestCase {
     )
   }
 
+  func testMaximizeBeforeSpaceChangeDoesNotVerifyFullscreen() {
+    var detector = FullscreenTransitionDetector()
+    _ = detector.update(snapshots: [snapshot()], at: 0)
+    _ = detector.update(snapshots: [snapshot(covering: ["built-in"])], at: 1)
+    detector.noteSpaceChange(at: 2)
+
+    XCTAssertEqual(
+      detector.update(snapshots: [snapshot(covering: ["built-in"])], at: 3),
+      []
+    )
+  }
+
   func testVerifiedWindowRemainsVerifiedAfterLeavingAndReturningToItsSpace() {
     var detector = FullscreenTransitionDetector()
     _ = detector.update(snapshots: [snapshot()], at: 0)

@@ -28,14 +28,18 @@ struct DisplayDescriptor: Identifiable, Equatable {
     self.fullscreenTopInset = fullscreenTopInset
   }
 
+  /// The menu-bar band this display's clock draws inside.
+  ///
+  /// This is the strip the system menu bar occupies, not the area under it. In a
+  /// fullscreen Space the strip is empty, so drawing here puts TimeLedge on the
+  /// same line the system clock uses when the menu bar is visible.
   var placementBounds: CGRect {
     if let area = topRightSafeArea, !area.isEmpty {
-      let topEdge = min(max(frame.minY + 1, area.minY), frame.maxY)
       return CGRect(
-        x: area.minX,
-        y: frame.minY,
-        width: area.width,
-        height: topEdge - frame.minY
+        x: max(area.minX, frame.minX),
+        y: max(area.minY, frame.minY),
+        width: min(area.width, frame.width),
+        height: min(area.height, frame.height)
       )
     }
     return frame

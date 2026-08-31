@@ -91,10 +91,23 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
       safeAreaTop: 32,
       statusBarThickness: 22,
+      menuBarHeight: 0,
       auxiliaryTopRightArea: CGRect(x: -226, y: 918, width: 663.5, height: 32)
     )
 
     XCTAssertEqual(bounds, CGRect(x: 848.5, y: 950, width: 663.5, height: 32))
+  }
+
+  func testTopRightPlacementPrefersObservedMenuBarHeightOverThinnerAuxiliaryArea() {
+    let bounds = SystemDisplayProvider.topRightPlacementBounds(
+      screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+      safeAreaTop: 32,
+      statusBarThickness: 22,
+      menuBarHeight: 34,
+      auxiliaryTopRightArea: CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
+    )
+
+    XCTAssertEqual(bounds, CGRect(x: 848.5, y: 948, width: 663.5, height: 34))
   }
 
   func testTopRightPlacementUsesRightHalfForNotchedScreenFallback() {
@@ -102,6 +115,7 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: -1512, y: 100, width: 1512, height: 982),
       safeAreaTop: 32,
       statusBarThickness: 22,
+      menuBarHeight: 0,
       auxiliaryTopRightArea: nil
     )
 
@@ -113,10 +127,32 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: 0, y: -1080, width: 1920, height: 1080),
       safeAreaTop: 0,
       statusBarThickness: 24,
+      menuBarHeight: 30,
       auxiliaryTopRightArea: nil
     )
 
-    XCTAssertEqual(bounds, CGRect(x: 0, y: -24, width: 1920, height: 24))
+    XCTAssertEqual(bounds, CGRect(x: 0, y: -30, width: 1920, height: 30))
+  }
+
+  func testObservedMenuBarHeightUsesVisibleFrameGap() {
+    XCTAssertEqual(
+      SystemDisplayProvider.observedMenuBarHeight(
+        screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+        visibleFrame: CGRect(x: 0, y: 66, width: 1512, height: 882)
+      ),
+      34
+    )
+  }
+
+  func testObservedMenuBarHeightIsZeroWhenMenuBarIsHidden() {
+    let frame = CGRect(x: 0, y: 0, width: 1512, height: 982)
+    XCTAssertEqual(
+      SystemDisplayProvider.observedMenuBarHeight(
+        screenFrame: frame,
+        visibleFrame: frame
+      ),
+      0
+    )
   }
 
   func testFullscreenEvidenceDoesNotIgnoreVisibleMenuBarOnNonNotchedDisplay() {
@@ -139,20 +175,19 @@ final class PreferencesStoreTests: XCTestCase {
     )
   }
 
-  func testDisplayPlacementAnchorsBelowSystemTopStrip() {
+  func testDisplayPlacementUsesTheMenuBarBand() {
+    let band = CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
     let display = DisplayDescriptor(
       id: "built-in",
       localizedName: "Built-in Retina Display",
       displayID: 1,
       isBuiltIn: true,
       frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
-      topRightSafeArea: CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
+      topRightSafeArea: band
     )
 
-    XCTAssertEqual(
-      display.placementBounds,
-      CGRect(x: 848.5, y: 0, width: 663.5, height: 950)
-    )
+    XCTAssertEqual(display.placementBounds, band)
+    XCTAssertEqual(display.placementBounds.maxY, display.frame.maxY)
   }
 
   private func descriptor(id: String, builtIn: Bool) -> DisplayDescriptor {

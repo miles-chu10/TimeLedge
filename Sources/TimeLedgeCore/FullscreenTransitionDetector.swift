@@ -47,6 +47,7 @@ public struct FullscreenTransitionDetector: Sendable {
     }
 
     var coveredDisplayIDs: Set<String> = []
+    var didVerifyTransition = false
     for snapshot in snapshots {
       if snapshot.coveredDisplayIDs.isEmpty {
         lastNoncoveringObservation[snapshot.identity] = time
@@ -62,11 +63,16 @@ public struct FullscreenTransitionDetector: Sendable {
         lastNoncovering >= transitionStartedAt - max(0, lookback)
       {
         verifiedFullscreenWindows.insert(snapshot.identity)
+        didVerifyTransition = true
       }
 
       if verifiedFullscreenWindows.contains(snapshot.identity) {
         coveredDisplayIDs.formUnion(snapshot.coveredDisplayIDs)
       }
+    }
+    if didVerifyTransition {
+      transitionStartedAt = nil
+      transitionDeadline = nil
     }
     return coveredDisplayIDs
   }

@@ -5,6 +5,14 @@ import XCTest
 
 @MainActor
 final class OverlayPanelTests: XCTestCase {
+  func testJoinsOtherApplicationsFullscreenSpaces() {
+    let behavior = OverlayPanel().collectionBehavior
+
+    XCTAssertTrue(behavior.contains(.canJoinAllSpaces))
+    XCTAssertTrue(behavior.contains(.canJoinAllApplications))
+    XCTAssertTrue(behavior.contains(.fullScreenAuxiliary))
+  }
+
   func testDoesNotConstrainOverlayBelowVisibleMenuBar() {
     let panel = OverlayPanel()
     let requestedFrame = CGRect(x: 1200, y: 960, width: 200, height: 20)

@@ -20,7 +20,7 @@ public enum ClockVisibilityMode: String, CaseIterable, Codable, Identifiable {
     case .automatic:
       return "Shows when the menu bar is hidden or the frontmost app fills the display."
     case .fullscreenOnly:
-      return "Shows only when the menu bar is hidden and the frontmost app covers the display."
+      return "Shows only when the frontmost app fills the display."
     case .always:
       return "Shows on every enabled display until you turn the clock off."
     }

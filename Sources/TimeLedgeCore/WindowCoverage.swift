@@ -5,6 +5,7 @@ public enum WindowCoverage {
   public static func coversDisplay(
     windowBounds: CGRect,
     displayBounds: CGRect,
+    allowedTopInset: CGFloat = 0,
     minimumCoverage: CGFloat = 0.985,
     edgeTolerance: CGFloat = 3
   ) -> Bool {
@@ -12,19 +13,26 @@ public enum WindowCoverage {
       return false
     }
 
-    let intersection = windowBounds.intersection(displayBounds)
+    let safeTopInset = min(max(0, allowedTopInset), displayBounds.height - 1)
+    let requiredBounds = CGRect(
+      x: displayBounds.minX,
+      y: displayBounds.minY + safeTopInset,
+      width: displayBounds.width,
+      height: displayBounds.height - safeTopInset
+    )
+    let intersection = windowBounds.intersection(requiredBounds)
     guard !intersection.isNull, !intersection.isEmpty else {
       return false
     }
 
-    let displayArea = displayBounds.width * displayBounds.height
+    let displayArea = requiredBounds.width * requiredBounds.height
     let coveredArea = intersection.width * intersection.height
     let coverage = coveredArea / displayArea
     let coversEdges =
-      windowBounds.minX <= displayBounds.minX + edgeTolerance
-      && windowBounds.maxX >= displayBounds.maxX - edgeTolerance
-      && windowBounds.minY <= displayBounds.minY + edgeTolerance
-      && windowBounds.maxY >= displayBounds.maxY - edgeTolerance
+      windowBounds.minX <= requiredBounds.minX + edgeTolerance
+      && windowBounds.maxX >= requiredBounds.maxX - edgeTolerance
+      && windowBounds.minY <= requiredBounds.minY + edgeTolerance
+      && windowBounds.maxY >= requiredBounds.maxY - edgeTolerance
 
     return coverage >= minimumCoverage && coversEdges
   }

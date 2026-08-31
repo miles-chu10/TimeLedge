@@ -20,6 +20,39 @@ final class WindowCoverageTests: XCTestCase {
     XCTAssertTrue(WindowCoverage.coversDisplay(windowBounds: window, displayBounds: display))
   }
 
+  func testNativeFullscreenMayLeaveNotchSafeTopStrip() {
+    let display = CGRect(x: 0, y: 0, width: 1_512, height: 982)
+    let window = CGRect(x: 0, y: 33, width: 1_512, height: 949)
+
+    XCTAssertTrue(
+      WindowCoverage.coversDisplay(
+        windowBounds: window,
+        displayBounds: display,
+        allowedTopInset: 32
+      )
+    )
+  }
+
+  func testTopStripGapFailsWithoutSafeAreaAllowance() {
+    let display = CGRect(x: 0, y: 0, width: 1_512, height: 982)
+    let window = CGRect(x: 0, y: 33, width: 1_512, height: 949)
+
+    XCTAssertFalse(WindowCoverage.coversDisplay(windowBounds: window, displayBounds: display))
+  }
+
+  func testOrdinaryWindowStillFailsWithSafeTopInset() {
+    let display = CGRect(x: 0, y: 0, width: 1_512, height: 982)
+    let window = CGRect(x: 0, y: 33, width: 1_512, height: 850)
+
+    XCTAssertFalse(
+      WindowCoverage.coversDisplay(
+        windowBounds: window,
+        displayBounds: display,
+        allowedTopInset: 32
+      )
+    )
+  }
+
   func testZeroSizedDisplayFailsClosed() {
     XCTAssertFalse(
       WindowCoverage.coversDisplay(windowBounds: .zero, displayBounds: .zero)

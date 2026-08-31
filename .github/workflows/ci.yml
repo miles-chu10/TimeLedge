@@ -15,7 +15,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Toolchain
-        run: xcodebuild -version && xcrun swift --version
+        run: xcrun --show-sdk-version && xcrun swift --version
       - name: Tests
         run: ./script/ci-test.sh
       - name: Build app bundle
@@ -27,6 +27,8 @@ jobs:
           test -f dist/TimeLedge.app/Contents/Resources/TimeLedge.icns
           plutil -lint dist/TimeLedge.app/Contents/Resources/PrivacyInfo.xcprivacy
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/TimeLedge.app/Contents/Info.plist)" = "TimeLedge.icns"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :NSPrivacyAccessedAPITypes:0:NSPrivacyAccessedAPIType' dist/TimeLedge.app/Contents/Resources/PrivacyInfo.xcprivacy)" = "NSPrivacyAccessedAPICategoryUserDefaults"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :NSPrivacyAccessedAPITypes:0:NSPrivacyAccessedAPITypeReasons:0' dist/TimeLedge.app/Contents/Resources/PrivacyInfo.xcprivacy)" = "CA92.1"
       - name: Package app bundle
         if: github.event_name == 'push'
         run: ditto -c -k --sequesterRsrc --keepParent dist/TimeLedge.app TimeLedge-macOS.zip

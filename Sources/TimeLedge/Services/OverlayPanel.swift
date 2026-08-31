@@ -32,6 +32,7 @@ final class OverlayPanel: NSPanel {
     animationBehavior = .none
     collectionBehavior = [
       .canJoinAllSpaces,
+      .canJoinAllApplications,
       .fullScreenAuxiliary,
       .stationary,
       .ignoresCycle,

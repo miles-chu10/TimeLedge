@@ -43,7 +43,8 @@ struct FrontmostWindowProbe {
         candidateBounds.contains(where: {
           WindowCoverage.coversDisplay(
             windowBounds: $0,
-            displayBounds: CGDisplayBounds(display.displayID)
+            displayBounds: CGDisplayBounds(display.displayID),
+            allowedTopInset: display.topRightSafeArea?.height ?? 0
           )
         }) ? display.id : nil
       })

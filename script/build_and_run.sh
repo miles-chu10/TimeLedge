@@ -19,10 +19,11 @@ ICON_FILE="$ROOT_DIR/Resources/TimeLedge.icns"
 PRIVACY_FILE="$ROOT_DIR/Resources/PrivacyInfo.xcprivacy"
 MODULE_CACHE="$ROOT_DIR/.build/codex-module-cache"
 SWIFT=(/usr/bin/xcrun swift)
+TIMELEDGE_DEVELOPER_PATH="$(/usr/bin/xcode-select -p 2>/dev/null || true)"
 
-if ! /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+if [[ ! -d "$TIMELEDGE_DEVELOPER_PATH/Platforms/MacOSX.platform/Developer/SDKs" ]]; then
   printf 'TimeLedge requires full Xcode; xcode-select currently points to %s\n' \
-    "$(/usr/bin/xcode-select -p 2>/dev/null || printf 'no developer directory')" >&2
+    "${TIMELEDGE_DEVELOPER_PATH:-no developer directory}" >&2
   exit 1
 fi
 
@@ -32,13 +33,13 @@ export SWIFTPM_MODULECACHE_OVERRIDE="$MODULE_CACHE"
 
 /usr/bin/pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 
-SWIFT_BUILD_ARGS=(build --product "$APP_NAME")
+SWIFT_BUILD_ARGS=(build --configuration release --product "$APP_NAME")
 if [[ "${TIMELEDGE_DISABLE_SWIFTPM_SANDBOX:-1}" == "1" ]]; then
   SWIFT_BUILD_ARGS+=(--disable-sandbox)
 fi
 
 "${SWIFT[@]}" "${SWIFT_BUILD_ARGS[@]}"
-BUILD_BINARY="$("${SWIFT[@]}" build --show-bin-path)/$APP_NAME"
+BUILD_BINARY="$("${SWIFT[@]}" build --configuration release --show-bin-path)/$APP_NAME"
 
 test -f "$ICON_FILE"
 test -f "$PRIVACY_FILE"

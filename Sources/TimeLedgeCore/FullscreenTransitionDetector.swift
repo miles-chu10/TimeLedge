@@ -22,6 +22,7 @@ public struct WindowCoverageSnapshot: Equatable, Sendable {
 
 public struct FullscreenTransitionDetector: Sendable {
   private var lastNoncoveringObservation: [WindowIdentity: TimeInterval] = [:]
+  private var coveringBeganAt: [WindowIdentity: TimeInterval] = [:]
   private var currentlyCoveringWindows: Set<WindowIdentity> = []
   private var verifiedFullscreenWindows: Set<WindowIdentity> = []
   private var transitionStartedAt: TimeInterval?
@@ -45,7 +46,8 @@ public struct FullscreenTransitionDetector: Sendable {
   public mutating func update(
     snapshots: [WindowCoverageSnapshot],
     at time: TimeInterval,
-    lookback: TimeInterval = 5
+    lookback: TimeInterval = 5,
+    preTransitionTolerance: TimeInterval = 0.25
   ) -> Set<String> {
     if let deadline = transitionDeadline, time > deadline {
       transitionStartedAt = nil
@@ -68,18 +70,23 @@ public struct FullscreenTransitionDetector: Sendable {
     for snapshot in snapshots {
       if snapshot.coveredDisplayIDs.isEmpty {
         lastNoncoveringObservation[snapshot.identity] = time
+        coveringBeganAt.removeValue(forKey: snapshot.identity)
         currentlyCoveringWindows.remove(snapshot.identity)
         verifiedFullscreenWindows.remove(snapshot.identity)
         continue
       }
 
       let beganCovering = currentlyCoveringWindows.insert(snapshot.identity).inserted
-      if beganCovering,
-        !verifiedFullscreenWindows.contains(snapshot.identity),
+      if beganCovering {
+        coveringBeganAt[snapshot.identity] = time
+      }
+      if !verifiedFullscreenWindows.contains(snapshot.identity),
         let transitionStartedAt,
         let transitionDeadline,
-        time >= transitionStartedAt,
         time <= transitionDeadline,
+        let coveringBegan = coveringBeganAt[snapshot.identity],
+        coveringBegan >= transitionStartedAt - max(0, preTransitionTolerance),
+        coveringBegan <= transitionDeadline,
         let lastNoncovering = lastNoncoveringObservation[snapshot.identity],
         lastNoncovering >= transitionStartedAt - max(0, lookback)
       {

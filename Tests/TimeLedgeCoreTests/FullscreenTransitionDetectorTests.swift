@@ -26,6 +26,18 @@ final class FullscreenTransitionDetectorTests: XCTestCase {
     )
   }
 
+  func testCoverageJustBeforeSpaceNotificationStillVerifiesFullscreen() {
+    var detector = FullscreenTransitionDetector()
+    _ = detector.update(snapshots: [snapshot()], at: 0)
+    _ = detector.update(snapshots: [snapshot(covering: ["built-in"])], at: 1.8)
+    detector.noteSpaceChange(at: 2)
+
+    XCTAssertEqual(
+      detector.update(snapshots: [snapshot(covering: ["built-in"])], at: 2.1),
+      ["built-in"]
+    )
+  }
+
   func testAlreadyCoveringWindowOnSpaceSwitchFailsClosed() {
     var detector = FullscreenTransitionDetector()
     _ = detector.update(snapshots: [snapshot(covering: ["built-in"])], at: 0)

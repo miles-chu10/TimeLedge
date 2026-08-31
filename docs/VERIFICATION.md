@@ -38,9 +38,13 @@ Final CI and live fullscreen validation completed 2026-08-31.
   and overlay implementations were not copied.
 - New pure-policy tests cover automatic, fullscreen-only, always-visible,
   fail-closed, pointer-reveal, and window-coverage behavior.
+- Dedicated transition tests prove that an ordinary maximize without a Spaces
+  change fails closed, a recent windowed-to-fullscreen Space transition is
+  accepted, verification survives leaving and returning to that Space, and
+  returning to windowed geometry clears it.
 - GitHub Actions CI run
-  [`33404006802`](https://github.com/miles-chu10/TimeLedge/actions/runs/33404006802)
-  passed on macOS for commit `14d1f36`: all 40 XCTest cases passed, the
+  [`33407871757`](https://github.com/miles-chu10/TimeLedge/actions/runs/33407871757)
+  passed on macOS for commit `d6bcce4`: all 45 XCTest cases passed, the
   release-optimized app bundle built, app and privacy plist validation passed,
   ad-hoc `codesign --verify --deep --strict` passed, and the downloadable
   artifact uploaded.
@@ -50,8 +54,9 @@ Final CI and live fullscreen validation completed 2026-08-31.
   `/Users/mileschu/code/apps/TimeLedge/dist/TimeLedge.app` path. With Automatic
   mode and the ordinary menu bar visible, Core Graphics reported zero TimeLedge
   overlay windows.
-- A separate AppKit helper entered a native fullscreen Space. The final artifact
-  produced exactly one on-screen TimeLedge overlay at `.floating`,
+- A separate AppKit helper remained frontmost while its ordinary window entered
+  a native fullscreen Space. The final artifact produced exactly one on-screen
+  TimeLedge overlay at `.floating`,
   `{X:1369,Y:35,W:131,H:16}`, and the rendered screenshot showed the clock at
   the top-right below the hidden 32-point system strip.
 - Moving the pointer into the top reveal band reduced the on-screen overlay

@@ -1,6 +1,6 @@
 # Verification record
 
-Verified 2026-08-30 on:
+Prior baseline verified 2026-08-30 on:
 
 - macOS 27.0 (26A5421a), Apple silicon
 - Xcode 27.0 (27A5228h)
@@ -29,16 +29,35 @@ Verified 2026-08-30 on:
 - The live display list showed **Built-in Retina Display** enabled and the
   external **ASUS VG249** disabled by default.
 
-## Consolidation validation passed
+## Final 0.1.0 validation passed
+
+Final CI and live fullscreen validation completed 2026-08-31.
 
 - The earlier prototype's unique visibility policy and window-coverage evidence were
   ported under TimeLedge names; duplicated formatter, display, settings, panel,
   and overlay implementations were not copied.
 - New pure-policy tests cover automatic, fullscreen-only, always-visible,
   fail-closed, pointer-reveal, and window-coverage behavior.
-- GitHub Actions CI run `33355318703` passed on macOS for commit `cc4d969`:
-  all 29 XCTest cases passed, the app bundle built, `plutil -lint` passed, and
-  `codesign --verify --deep --strict` passed.
+- GitHub Actions CI run
+  [`33404006802`](https://github.com/miles-chu10/TimeLedge/actions/runs/33404006802)
+  passed on macOS for commit `14d1f36`: all 40 XCTest cases passed, the
+  release-optimized app bundle built, app and privacy plist validation passed,
+  ad-hoc `codesign --verify --deep --strict` passed, and the downloadable
+  artifact uploaded.
+- The CI runner used macOS SDK 26.5 and Apple Swift 6.3.3; the package continues
+  to declare macOS 13.0 as its deployment target.
+- The exact CI artifact launched locally from the canonical
+  `/Users/mileschu/code/apps/TimeLedge/dist/TimeLedge.app` path. With Automatic
+  mode and the ordinary menu bar visible, Core Graphics reported zero TimeLedge
+  overlay windows.
+- A separate AppKit helper entered a native fullscreen Space. The final artifact
+  produced exactly one on-screen TimeLedge overlay at `.floating`,
+  `{X:1369,Y:35,W:131,H:16}`, and the rendered screenshot showed the clock at
+  the top-right below the hidden 32-point system strip.
+- Moving the pointer into the top reveal band reduced the on-screen overlay
+  count to zero; exiting fullscreen also left zero overlay windows.
+- The bundled privacy manifest declares local-only UserDefaults access with
+  Apple's `CA92.1` required reason and declares no tracking or collected data.
 - The local machine currently has Command Line Tools but not full Xcode; the
   macOS GitHub Actions run is therefore the authoritative native build evidence.
 
@@ -57,6 +76,6 @@ Verified 2026-08-30 on:
 The following require hardware/state changes that were not performed during the
 automated run: external-display unplug/replug, Stage Manager, sleep/wake, camera
 or microphone privacy-dot activation, multiple user locales/time zones, and a
-matrix of third-party fullscreen apps. The automated native-fullscreen probe
+matrix of third-party fullscreen apps. The live native-fullscreen probe
 establishes the requested core fullscreen behavior but does not guarantee every
 protected or future macOS surface.

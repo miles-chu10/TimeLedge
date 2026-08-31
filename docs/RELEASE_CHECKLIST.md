@@ -22,7 +22,7 @@ Confirm the manifest declares `TimeLedgeCore`, `TimeLedge`, `TimeLedgeCoreTests`
 - [ ] Clock ignores clicks and the menu-bar icon remains the recovery path
 - [ ] Hidden menu bar reveals over the clock without an unreadable collision
 - [ ] Automatic mode shows for hidden-menu-bar and fullscreen evidence
-- [ ] Fullscreen Only mode fails closed without both evidence signals
+- [ ] Fullscreen Only mode fails closed without frontmost full-display evidence
 - [ ] Always mode preserves the enabled-display overlay behavior
 - [ ] Safari native fullscreen keeps the clock visible
 - [ ] QuickTime or another native fullscreen app keeps the clock visible
@@ -30,7 +30,8 @@ Confirm the manifest declares `TimeLedgeCore`, `TimeLedge`, `TimeLedgeCoreTests`
 - [ ] Mission Control does not create stray or duplicated clock windows
 - [ ] Stage Manager has no duplicated, focus-stealing, or trapped clock window
 - [ ] External display opt-in, unplug, and replug update the panel set correctly
-- [ ] Notched built-in display keeps the text inside the top-right safe region
+- [ ] Notched built-in display keeps the text right of the notch and directly
+      below the hidden system strip
 - [ ] Wide margin avoids the camera/microphone privacy indicator
 - [ ] Light/dark appearance and readable background remain legible
 - [ ] 12/24-hour, seconds, custom pattern, locale, and time-zone changes update
@@ -40,6 +41,16 @@ Confirm the manifest declares `TimeLedgeCore`, `TimeLedge`, `TimeLedgeCoreTests`
 
 ## Distribution gates
 
-Public source publication is authorized. Developer ID signing, notarization,
-installer creation, deployment, and App Store submission remain unperformed and
-require separate authorization.
+Public source publication is authorized. The CI artifact is release-optimized
+but ad-hoc signed and retained for seven days; it is not a durable public
+release. Developer ID signing, hardened runtime, notarization, installer
+creation, deployment, and App Store submission remain unperformed and require
+separate authorization.
+
+Before Mac App Store submission, also validate App Sandbox compatibility and
+prepare App Store Connect metadata, 16:10 Mac screenshots, support and privacy
+URLs, distribution signing, provisioning, and review notes. The repository's
+current public references are:
+
+- Privacy: <https://github.com/miles-chu10/TimeLedge/blob/main/PRIVACY.md>
+- Support: <https://github.com/miles-chu10/TimeLedge/issues>

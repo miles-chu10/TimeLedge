@@ -27,7 +27,8 @@ Each enabled display owns one borderless, non-activating `NSPanel`:
 - `ignoresMouseEvents = true`
 - never key or main
 - does not hide when TimeLedge deactivates
-- joins all Spaces and participates as a fullscreen auxiliary window
+- joins all Spaces and other applications' fullscreen sets as an auxiliary
+  window
 - stays stationary and out of the normal window cycle
 
 `Over Apps` uses the documented `.floating` level. That is high enough for app
@@ -35,17 +36,21 @@ content while remaining below the system menu bar when it reappears. `Behind
 Apps` uses `.normal` and orders the panel behind normal windows. The app
 intentionally avoids status-bar/screen-saver levels and private window APIs.
 
-The placement calculator uses `NSScreen.auxiliaryTopRightArea` when a notched
-display provides it; otherwise it uses the screen frame. Coordinates remain in
-macOS global point space, including negative external-display coordinates.
+The display provider uses `NSScreen.auxiliaryTopRightArea` to keep the clock to
+the right of a notch, normalizes that area to the physical display edges, and
+anchors the clock immediately below the hidden system strip. This keeps the
+documented `.floating` level below protected menu-bar surfaces while Automatic
+mode removes the overlay whenever ordinary menu-bar/fullscreen evidence is
+absent. Coordinates remain in macOS global point space, including negative
+external-display coordinates.
 
 ## Visibility pipeline
 
 `FullscreenVisibilityMonitor` observes active Spaces, app activation,
 session/sleep state, and display changes, with a 250 ms poll for window geometry
 changes that have no reliable notification. It combines menu-bar geometry,
-frontmost layer-0 window coverage, and a short pointer-reveal hold through the
-pure `ClockVisibilityPolicy`.
+frontmost layer-0 window coverage, the display's notch-safe top inset, and a
+short pointer-reveal hold through the pure `ClockVisibilityPolicy`.
 
 The default mode shows an enabled display when its menu bar is hidden or the
 frontmost app owns a layer-0 window covering the display. `Fullscreen Only`

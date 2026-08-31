@@ -17,7 +17,8 @@ with SwiftUI and AppKit and licensed under MIT.
 - Default or wide right margin for the camera/microphone privacy indicator
 - Menu-bar controls, a native settings window, preference persistence, and
   opt-in Launch at Login
-- Original TimeLedge app icon and a bundled no-data privacy manifest
+- Original TimeLedge app icon and a privacy manifest declaring local-only
+  UserDefaults access
 - No network requests, analytics, ads, accessibility permission, or screen
   recording permission
 
@@ -59,13 +60,26 @@ GitHub Actions workflow or a local Mac with full Xcode.
 
 ## Verification status
 
-Automated tests cover formatting, persistence, display-default policy, and
-top-right geometry. GitHub Actions runs the complete 29-test suite, builds the
-app bundle, validates its plist, and verifies its ad-hoc signature on macOS.
+Automated tests cover formatting, persistence, display-default policy,
+fullscreen evidence, panel behavior, and top-right geometry. GitHub Actions
+runs the complete 40-test suite, builds a release-optimized app bundle,
+validates its app and privacy plists, and verifies its ad-hoc signature on
+macOS.
 Fullscreen Spaces, Mission Control, Stage Manager, display hot-plug, and
 notch/menu-bar interactions still require the manual matrix in
 [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md) because AppKit window
 collection behavior cannot be proven by unit tests.
+
+## Distribution status
+
+The GitHub Actions artifact is intended for local testing. It is ad-hoc signed,
+retained for seven days, and is not a notarized public installer or an App Store
+submission. Trusted distribution outside the store still requires Developer ID
+signing and notarization; Mac App Store distribution additionally requires App
+Sandbox, App Store Connect metadata, screenshots, and review.
+
+See the [privacy policy](PRIVACY.md) and
+[release checklist](docs/RELEASE_CHECKLIST.md) before distributing a build.
 
 ## Research and clean-room boundary
 

@@ -5,7 +5,7 @@
 | Capability | TimeLedge contract | Evidence gate |
 | --- | --- | --- |
 | Hidden menu bar | Automatic mode shows the clock without forcing menu-bar reveal | Policy tests plus manual hidden-menu-bar check |
-| Fullscreen | Hidden menu-bar geometry activates the overlay; strict mode also requires window coverage | Policy/coverage tests plus manual Safari/QuickTime check |
+| Fullscreen | Full-display frontmost-window coverage activates the overlay even when `visibleFrame` remains unchanged | Policy/coverage tests plus manual Safari/QuickTime check |
 | Built-in display | Built-in display is enabled by default | Unit test plus runtime settings list |
 | Multiple displays | Connected displays are detected and enabled independently | Unit policy test plus hot-plug check |
 | Format | 12/24-hour, seconds, date, weekday, and custom pattern | Formatter tests |

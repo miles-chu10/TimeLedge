@@ -21,24 +21,39 @@ final class ClockVisibilityTests: XCTestCase {
     )
   }
 
-  func testAutomaticHidesWhenMenuBarIsVisibleDespiteCoveringWindow() {
+  func testAutomaticShowsForFullscreenCoverageWithVisibleFrameGeometry() {
     var evidence = affirmative
     evidence.menuBarIsHiddenByGeometry = false
 
-    XCTAssertFalse(
+    XCTAssertTrue(
       ClockVisibilityPolicy.shouldShowClock(mode: .automatic, evidence: evidence)
     )
   }
 
-  func testFullscreenOnlyRequiresBothSignals() {
+  func testFullscreenOnlyRequiresWindowCoverage() {
     XCTAssertTrue(
       ClockVisibilityPolicy.shouldShowClock(mode: .fullscreenOnly, evidence: affirmative)
     )
 
     var evidence = affirmative
+    evidence.menuBarIsHiddenByGeometry = false
+    XCTAssertTrue(
+      ClockVisibilityPolicy.shouldShowClock(mode: .fullscreenOnly, evidence: evidence)
+    )
+
     evidence.frontmostWindowCoversDisplay = false
     XCTAssertFalse(
       ClockVisibilityPolicy.shouldShowClock(mode: .fullscreenOnly, evidence: evidence)
+    )
+  }
+
+  func testAutomaticHidesWithVisibleMenuBarAndOrdinaryWindow() {
+    var evidence = affirmative
+    evidence.menuBarIsHiddenByGeometry = false
+    evidence.frontmostWindowCoversDisplay = false
+
+    XCTAssertFalse(
+      ClockVisibilityPolicy.shouldShowClock(mode: .automatic, evidence: evidence)
     )
   }
 

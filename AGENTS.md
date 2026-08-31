@@ -15,9 +15,9 @@
 
 ## Code Review Rules
 
-- Treat any change that makes automatic visibility show over an ordinary visible
-  menu bar, ignores session inactivity, or bypasses automatic-mode pointer-reveal
-  suppression as a P1 regression.
+- Treat any change that makes automatic visibility show with a visible menu bar
+  and no verified full-display frontmost window, ignores session inactivity, or
+  bypasses automatic-mode pointer-reveal suppression as a P1 regression.
 - Treat networking, telemetry, private window APIs, permission-gated screen
   capture, or copied proprietary Corner Time material as P1.
 - Keep `.floating` as the highest supported overlay level; do not use status-bar,

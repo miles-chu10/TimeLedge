@@ -9,7 +9,7 @@ public enum ClockVisibilityMode: String, CaseIterable, Codable, Identifiable {
 
   public var title: String {
     switch self {
-    case .automatic: return "Menu Bar Hidden"
+    case .automatic: return "Hidden or Fullscreen"
     case .fullscreenOnly: return "Fullscreen Only"
     case .always: return "Always"
     }
@@ -18,7 +18,7 @@ public enum ClockVisibilityMode: String, CaseIterable, Codable, Identifiable {
   public var detail: String {
     switch self {
     case .automatic:
-      return "Shows when the menu bar is hidden, including native fullscreen Spaces."
+      return "Shows when the menu bar is hidden or the frontmost app fills the display."
     case .fullscreenOnly:
       return "Shows only when the menu bar is hidden and the frontmost app covers the display."
     case .always:
@@ -75,9 +75,9 @@ public enum ClockVisibilityPolicy {
     switch mode {
     case .automatic:
       return evidence.menuBarIsHiddenByGeometry
+        || evidence.frontmostWindowCoversDisplay
     case .fullscreenOnly:
-      return evidence.menuBarIsHiddenByGeometry
-        && evidence.frontmostWindowCoversDisplay
+      return evidence.frontmostWindowCoversDisplay
     case .always:
       return true
     }

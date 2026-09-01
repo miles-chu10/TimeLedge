@@ -92,12 +92,20 @@ shipping code.
 - The overlay now takes over the strip the menu bar vacated instead of rendering
   below it, and the menu-bar item is icon-only unless the user opts in.
 
-Required before release:
+macOS CI passed on commit `6aa458c`
+([`33459663780`](https://github.com/miles-chu10/TimeLedge/actions/runs/33459663780)):
+60 XCTest cases with zero failures, release-optimized bundle built, app and
+privacy plists linted, and ad-hoc `codesign --verify --deep --strict` passed.
+The matching push run
+([`33459641275`](https://github.com/miles-chu10/TimeLedge/actions/runs/33459641275))
+uploaded the `TimeLedge-macOS` artifact for local testing.
 
-- macOS CI: full suite, release bundle, plist lint, ad-hoc signature.
-- Live matrix: fullscreen Space opened before launch, Space left and re-entered,
-  pointer reveal, ordinary maximized window, external display, and the
-  `--diagnose` evidence table on the reporting machine.
+Still required before release, because no Linux container can produce it:
+
+- Live matrix on a Mac: a fullscreen Space opened before TimeLedge launched, a
+  Space left and re-entered, pointer reveal, an ordinary maximized window, an
+  external display, and the `--diagnose` evidence table on the reporting
+  machine.
 
 ## Static safety evidence
 

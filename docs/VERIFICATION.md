@@ -67,6 +67,38 @@ Final CI and live fullscreen validation completed 2026-08-31.
 - The local machine currently has Command Line Tools but not full Xcode; the
   macOS GitHub Actions run is therefore the authoritative native build evidence.
 
+## Unreleased menu-bar detection rework
+
+The 0.1.0 fullscreen evidence model was reported broken on a live Mac: in a
+fullscreen Chrome Space the top-right corner was empty, and the menu-bar item
+duplicated the system clock. Re-verification of this change is therefore
+pending, and the 0.1.0 fullscreen evidence above no longer describes the
+shipping code.
+
+- Root cause of the empty corner: `FullscreenTransitionDetector` only trusted
+  full-display coverage that it had watched change during a Spaces transition,
+  and it revoked that trust when the same window stayed frontmost across a Space
+  change. A Space that was already open at launch was never verified, and a
+  verified Space that was left and re-entered could not be verified again,
+  because re-verification required first observing the window not covering the
+  display.
+- The detector and its tests were removed. `MenuBarPresenceTracker` plus
+  `MenuBarWindowProbe` now observe whether the window server draws the menu bar
+  on each display, using public `CGWindowListCopyWindowInfo` metadata (layer,
+  bounds, alpha) and no window contents.
+- The tracker self-calibrates per display and reports *unknown* until it has
+  actually seen that display's menu bar, so menu-bar geometry and full-display
+  coverage remain the fallback evidence.
+- The overlay now takes over the strip the menu bar vacated instead of rendering
+  below it, and the menu-bar item is icon-only unless the user opts in.
+
+Required before release:
+
+- macOS CI: full suite, release bundle, plist lint, ad-hoc signature.
+- Live matrix: fullscreen Space opened before launch, Space left and re-entered,
+  pointer reveal, ordinary maximized window, external display, and the
+  `--diagnose` evidence table on the reporting machine.
+
 ## Static safety evidence
 
 - `OverlayPanel` is non-activating, cannot become key/main, ignores mouse events,
@@ -76,6 +108,8 @@ Final CI and live fullscreen validation completed 2026-08-31.
   visibility monitor reads window metadata but not pixels.
 - The `.floating` overlay remains below the real menu bar's system level, so the
   menu bar can cover it when visible.
+- The menu-bar probe reads window metadata only. It requests no new entitlement,
+  permission, or private API, and it never captures screen content.
 
 ## Manual-only remainder
 

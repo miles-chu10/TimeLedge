@@ -18,9 +18,9 @@ public enum ClockVisibilityMode: String, CaseIterable, Codable, Identifiable {
   public var detail: String {
     switch self {
     case .automatic:
-      return "Shows when the menu bar is hidden or a verified fullscreen Space is active."
+      return "Shows whenever the system menu bar is not on screen, including fullscreen Spaces."
     case .fullscreenOnly:
-      return "Shows only after the frontmost app enters a verified fullscreen Space."
+      return "Shows only while the frontmost window covers the whole display."
     case .always:
       return "Shows on every enabled display until you turn the clock off."
     }
@@ -32,6 +32,10 @@ public struct ClockVisibilityEvidence: Equatable, Sendable {
   public var sessionIsActive: Bool
   public var displayIsAvailable: Bool
   public var menuBarIsHiddenByGeometry: Bool
+  /// Whether the window server currently draws the menu bar on this display.
+  /// `nil` means the menu-bar probe has not been calibrated for the display
+  /// yet, so the geometry and coverage evidence decide on their own.
+  public var menuBarWindowIsVisible: Bool?
   public var frontmostWindowCoversDisplay: Bool
   public var pointerIsRevealingMenuBar: Bool
 
@@ -40,6 +44,7 @@ public struct ClockVisibilityEvidence: Equatable, Sendable {
     sessionIsActive: Bool,
     displayIsAvailable: Bool,
     menuBarIsHiddenByGeometry: Bool,
+    menuBarWindowIsVisible: Bool? = nil,
     frontmostWindowCoversDisplay: Bool,
     pointerIsRevealingMenuBar: Bool
   ) {
@@ -47,6 +52,7 @@ public struct ClockVisibilityEvidence: Equatable, Sendable {
     self.sessionIsActive = sessionIsActive
     self.displayIsAvailable = displayIsAvailable
     self.menuBarIsHiddenByGeometry = menuBarIsHiddenByGeometry
+    self.menuBarWindowIsVisible = menuBarWindowIsVisible
     self.frontmostWindowCoversDisplay = frontmostWindowCoversDisplay
     self.pointerIsRevealingMenuBar = pointerIsRevealingMenuBar
   }
@@ -72,9 +78,16 @@ public enum ClockVisibilityPolicy {
       return false
     }
 
+    // The system menu bar is drawn on this display, so the system clock is
+    // already there. Never duplicate it, whatever the frontmost window covers.
+    if evidence.menuBarWindowIsVisible == true, !evidence.menuBarIsHiddenByGeometry {
+      return false
+    }
+
     switch mode {
     case .automatic:
-      return evidence.menuBarIsHiddenByGeometry
+      return evidence.menuBarWindowIsVisible == false
+        || evidence.menuBarIsHiddenByGeometry
         || evidence.frontmostWindowCoversDisplay
     case .fullscreenOnly:
       return evidence.frontmostWindowCoversDisplay

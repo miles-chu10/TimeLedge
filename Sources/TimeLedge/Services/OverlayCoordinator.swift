@@ -13,7 +13,7 @@ final class OverlayCoordinator {
   private let displayProvider: DisplayProviding
   private var records: [String: Record] = [:]
   private var observers: [NSObjectProtocol] = []
-  private var automaticallyVisibleDisplayIDs: Set<String> = []
+  private var visibilityState = DisplayVisibilityState()
 
   init(store: PreferencesStore, displayProvider: DisplayProviding) {
     self.store = store
@@ -96,7 +96,7 @@ final class OverlayCoordinator {
 
     for display in store.displays {
       let displayPreference = store.preference(for: display.id)
-      let modeAllowsDisplay = automaticallyVisibleDisplayIDs.contains(display.id)
+      let modeAllowsDisplay = visibilityState.visibleDisplayIDs.contains(display.id)
       guard displayPreference.isEnabled, modeAllowsDisplay else {
         records[display.id]?.panel.orderOut(nil)
         continue
@@ -121,12 +121,16 @@ final class OverlayCoordinator {
     }
   }
 
-  func setAutomaticallyVisibleDisplayIDs(_ displayIDs: Set<String>) {
-    guard automaticallyVisibleDisplayIDs != displayIDs else {
+  func setVisibilityState(_ state: DisplayVisibilityState) {
+    guard visibilityState != state else {
       return
     }
-    automaticallyVisibleDisplayIDs = displayIDs
+    visibilityState = state
     applyPreferences()
+  }
+
+  private func menuBarIsVisible(on displayID: String) -> Bool {
+    visibilityState.menuBarVisibleDisplayIDs.contains(displayID)
   }
 
   func writeSnapshots(to directory: URL) throws {
@@ -163,7 +167,7 @@ final class OverlayCoordinator {
   private func clockView(for display: DisplayDescriptor) -> ClockView {
     let horizontalPadding: CGFloat = store.preference(for: display.id).showsBackground ? 16 : 0
     let maximumWidth = OverlayPlacement.maximumContentWidth(
-      in: display.placementBounds,
+      in: display.placementBounds(menuBarIsVisible: menuBarIsVisible(on: display.id)),
       rightMargin: CGFloat(store.preferences.rightMargin.points),
       horizontalPadding: horizontalPadding
     )
@@ -182,15 +186,17 @@ final class OverlayCoordinator {
       let display = store.displays.first(where: { $0.id == displayID }),
       let record = records[displayID],
       store.preference(for: displayID).isEnabled,
-      automaticallyVisibleDisplayIDs.contains(displayID)
+      visibilityState.visibleDisplayIDs.contains(displayID)
     else {
       return
     }
 
+    let menuBarIsOnScreen = menuBarIsVisible(on: displayID)
     let frame = OverlayPlacement.frame(
-      in: display.placementBounds,
+      in: display.placementBounds(menuBarIsVisible: menuBarIsOnScreen),
       contentSize: contentSize,
-      rightMargin: CGFloat(store.preferences.rightMargin.points)
+      rightMargin: CGFloat(store.preferences.rightMargin.points),
+      alignment: menuBarIsOnScreen ? .top : .centered
     )
     guard record.panel.frame != frame else {
       return

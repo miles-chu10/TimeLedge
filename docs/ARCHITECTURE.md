@@ -21,11 +21,13 @@ TimeLedge
 
 ## Menu-bar clock
 
-`StatusItemController` owns a variable-length `NSStatusItem` and renders the
-same `ClockFormatter` output used by the overlay. The system therefore hosts the
-visible-menu clock in the actual menu-bar band. Turning Show Clock off replaces
-the title with the compact recovery icon so settings and Quit remain reachable.
-The status item uses an autosave name so user positioning persists.
+`StatusItemController` owns an `NSStatusItem` that is an icon by default. macOS
+already draws a clock in the menu bar, so a second formatted clock next to it is
+duplication; the status item is the control surface (Show Clock, Show Time in
+Menu Bar, Settings, Launch at Login, Quit) rather than a second clock. Users who
+do want the text can opt in with **Show Time in Menu Bar**, which renders the
+same `ClockFormatter` output as the overlay in a variable-length item. The
+status item uses an autosave name so user positioning persists.
 
 ## Window contract
 
@@ -45,32 +47,55 @@ Apps` uses `.normal` and orders the panel behind normal windows. The app
 intentionally avoids status-bar/screen-saver levels and private window APIs.
 
 The display provider uses `NSScreen.auxiliaryTopRightArea` to keep the clock to
-the right of a notch, normalizes that area to the physical display edges, and
-anchors the clock immediately below the hidden system strip. This keeps the
-documented `.floating` level below protected menu-bar surfaces while Automatic
-mode removes the overlay whenever ordinary menu-bar/fullscreen evidence is
-absent. Fullscreen coverage uses a separate hardware-notch inset so a maximized
-window below an ordinary visible menu bar cannot be mistaken for fullscreen.
-Coordinates remain in macOS global point space, including negative external-
-display coordinates.
+the right of a notch and normalizes that area to the physical display edges. The
+clock is then laid out in one of two bands:
+
+- menu bar off screen: centered inside the strip the menu bar vacated, which is
+  where a menu-bar clock belongs and keeps the overlay off the app's content
+- menu bar on screen: anchored below the strip, because the documented
+  `.floating` level renders under the real menu bar
+
+Fullscreen coverage uses a separate hardware-notch inset so a maximized window
+below an ordinary visible menu bar cannot be mistaken for fullscreen. Coordinates
+remain in macOS global point space, including negative external-display
+coordinates.
 
 ## Visibility pipeline
 
 `FullscreenVisibilityMonitor` observes active Spaces, app activation,
 session/sleep state, and display changes, with a 250 ms poll for window geometry
-changes that have no reliable notification. A pure transition detector trusts
-notch-safe frontmost-window coverage only when the same window was recently
-noncovering and then changed during a Spaces transition. The monitor combines
-that verified evidence with menu-bar geometry and a short pointer-reveal hold
-through the pure `ClockVisibilityPolicy`.
+changes that have no reliable notification. It gathers three independent pieces
+of evidence per display and runs them through the pure `ClockVisibilityPolicy`:
 
-The default mode shows an enabled display when its menu bar is hidden or a
-verified fullscreen transition covers it. `Fullscreen Only` requires the
-verified transition. `Always` preserves the original persistent-overlay
-behavior while the session is active.
-Session inactivity, a
-missing display, and the global Show Clock toggle fail closed. Automatic modes
-also suppress the overlay during pointer-based menu-bar reveal.
+1. **Menu-bar window presence.** `MenuBarWindowProbe` lists on-screen windows in
+   the public main-menu window level and matches them to display top edges;
+   `MenuBarPresenceTracker` turns that into "the menu bar is (not) drawn on this
+   display". This is a direct observation of the condition the app exists for,
+   so it works on launch inside a fullscreen Space, across Space switches, and
+   with the system auto-hide setting. The tracker self-calibrates: a display
+   reports *hidden* only after its menu bar has actually been seen once, so an
+   unexpected window-server layout reports *unknown* and the other evidence
+   decides.
+2. **Menu-bar geometry.** `NSScreen.frame` versus `visibleFrame`.
+3. **Frontmost-window coverage.** Notch-safe full-display coverage of the
+   frontmost application's windows.
+
+An earlier design inferred fullscreen from Spaces-change-correlated coverage
+transitions. That produced false negatives that made the clock disappear for the
+rest of a session -- a Space entered before launch, or left and re-entered, was
+never re-verified -- so it was replaced by the direct observation above.
+
+Automatic mode shows an enabled display when the menu bar is not on screen by
+any of that evidence. `Fullscreen Only` additionally requires full-display
+coverage. `Always` preserves the persistent-overlay behavior while the session
+is active. A menu bar the probe positively sees, with no geometry evidence to
+the contrary, suppresses the overlay in both automatic modes so the clock is
+never a duplicate of the system clock. Session inactivity, a missing display,
+and the global Show Clock toggle fail closed, and automatic modes also suppress
+the overlay during pointer-based menu-bar reveal.
+
+`TimeLedge --diagnose` prints that evidence table for every display and exits,
+so a machine-specific misdetection can be reported without guesswork.
 
 ## Display lifecycle
 

@@ -7,16 +7,19 @@ with SwiftUI and AppKit and licensed under MIT.
 ## What works
 
 - Click-through, non-activating clock overlay above fullscreen apps
-- Automatic visibility when the menu bar is hidden, including fullscreen
-  Spaces, with fullscreen-only and always-visible modes
-- Built-in Mac display enabled by default; external displays are opt-in
+- Automatic visibility whenever the system menu bar is not on screen, including
+  fullscreen Spaces entered before TimeLedge launched, with fullscreen-only and
+  always-visible modes
+- Built-in Mac display enabled by default; on a laptop, extra monitors are
+  opt-in, while a desktop Mac enables every display it has
 - Automatic display discovery and per-display readable backgrounds
 - 12/24-hour time, seconds, date, weekday, and custom DateFormatter patterns
 - System-locale and system-time-zone formatting
 - SF Pro, SF Rounded, and SF Mono designs; weight, size, color, and opacity
 - Default or wide right margin for the camera/microphone privacy indicator
-- A formatted clock hosted in the real menu-bar band, menu controls, a native
-  settings window, preference persistence, and opt-in Launch at Login
+- An icon-only menu-bar item for controls, with the formatted menu-bar text
+  clock available as an opt-in so it never duplicates the system clock
+- A native settings window, preference persistence, and opt-in Launch at Login
 - Original TimeLedge app icon and a privacy manifest declaring local-only
   UserDefaults access
 - No network requests, analytics, ads, accessibility permission, or screen
@@ -43,13 +46,18 @@ changed only when the user toggles it inside TimeLedge.
 ## Use
 
 1. Launch `dist/TimeLedge.app`.
-2. Look for the formatted TimeLedge clock in the menu bar.
+2. Look for the TimeLedge clock icon in the menu bar.
 3. Open **Settings…** to configure format, style, displays, and window level.
 4. Keep **Window level → Over Apps** selected for fullscreen visibility.
 
-The overlay ignores mouse events. Click the menu-bar clock to show, hide,
-configure, or quit TimeLedge. Turning the clock off collapses the menu-bar item
-back to its recovery icon.
+The overlay ignores mouse events. Click the menu-bar icon to show, hide,
+configure, or quit TimeLedge. **Show Time in Menu Bar** adds the formatted clock
+to the menu-bar item itself; it is off by default because macOS already draws a
+clock there.
+
+If the overlay does not appear where you expect, run
+`dist/TimeLedge.app/Contents/MacOS/TimeLedge --diagnose`. It prints the menu-bar,
+coverage, and pointer evidence for every display and exits.
 
 ## Codex Cloud
 
@@ -63,7 +71,7 @@ GitHub Actions workflow or a local Mac with full Xcode.
 
 Automated tests cover formatting, persistence, display-default policy,
 fullscreen evidence, panel behavior, and top-right geometry. GitHub Actions
-runs the complete 48-test suite, builds a release-optimized app bundle,
+runs the complete test suite, builds a release-optimized app bundle,
 validates its app and privacy plists, and verifies its ad-hoc signature on
 macOS.
 Fullscreen Spaces, Mission Control, Stage Manager, display hot-plug, and

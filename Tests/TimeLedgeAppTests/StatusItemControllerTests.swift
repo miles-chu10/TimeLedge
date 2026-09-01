@@ -17,9 +17,21 @@ final class StatusItemControllerTests: XCTestCase {
     controller.stop()
   }
 
-  func testVisibleClockUsesTheSharedFormatter() {
+  func testMenuBarStaysIconOnlyByDefaultInsteadOfRepeatingTheSystemClock() {
+    XCTAssertFalse(ClockPreferences.defaults.showsMenuBarClock)
+    XCTAssertNil(
+      StatusItemController.menuBarTitle(
+        at: Date(),
+        preferences: .defaults,
+        isClockVisible: true
+      )
+    )
+  }
+
+  func testOptedInMenuBarClockUsesTheSharedFormatter() {
     let date = Date(timeIntervalSince1970: 1_000_000)
-    let preferences = ClockPreferences.defaults
+    var preferences = ClockPreferences.defaults
+    preferences.showsMenuBarClock = true
 
     XCTAssertEqual(
       StatusItemController.menuBarTitle(
@@ -32,10 +44,13 @@ final class StatusItemControllerTests: XCTestCase {
   }
 
   func testHiddenClockFallsBackToRecoveryIcon() {
+    var preferences = ClockPreferences.defaults
+    preferences.showsMenuBarClock = true
+
     XCTAssertNil(
       StatusItemController.menuBarTitle(
         at: Date(),
-        preferences: .defaults,
+        preferences: preferences,
         isClockVisible: false
       )
     )

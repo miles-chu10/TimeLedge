@@ -33,7 +33,7 @@ final class PreferencesStoreTests: XCTestCase {
     XCTAssertFalse(store.preference(for: external.id).isEnabled)
   }
 
-  func testDesktopMacFallsBackToFirstDisplay() {
+  func testDesktopMacEnablesEveryExternalDisplayItHas() {
     let store = PreferencesStore(defaults: defaults)
     let first = descriptor(id: "first", builtIn: false)
     let second = descriptor(id: "second", builtIn: false)
@@ -41,7 +41,7 @@ final class PreferencesStoreTests: XCTestCase {
     store.synchronize(displays: [first, second])
 
     XCTAssertTrue(store.preference(for: first.id).isEnabled)
-    XCTAssertFalse(store.preference(for: second.id).isEnabled)
+    XCTAssertTrue(store.preference(for: second.id).isEnabled)
   }
 
   func testPreferencesPersistAcrossStoreInstances() {
@@ -139,19 +139,62 @@ final class PreferencesStoreTests: XCTestCase {
     )
   }
 
-  func testDisplayPlacementAnchorsBelowSystemTopStrip() {
-    let display = DisplayDescriptor(
+  func testDisplayPlacementAnchorsBelowVisibleSystemTopStrip() {
+    XCTAssertEqual(
+      notchedDisplay().placementBounds(menuBarIsVisible: true),
+      CGRect(x: 848.5, y: 0, width: 663.5, height: 950)
+    )
+  }
+
+  func testDisplayPlacementTakesOverTheStripWhenTheMenuBarIsHidden() {
+    XCTAssertEqual(
+      notchedDisplay().placementBounds(menuBarIsVisible: false),
+      CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
+    )
+  }
+
+  func testLegacyPreferencesWithoutNewerKeysKeepEverySavedSetting() throws {
+    var saved = ClockPreferences.defaults
+    saved.fontSize = 19
+    saved.fontFamily = .monospaced
+    saved.rightMargin = .wide
+    saved.use24HourFormat = true
+
+    var json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: try JSONEncoder().encode(saved)) as? [String: Any]
+    )
+    json.removeValue(forKey: "showsMenuBarClock")
+    defaults.set(
+      try JSONSerialization.data(withJSONObject: json),
+      forKey: "TimeLedge.preferences.v1"
+    )
+
+    let store = PreferencesStore(defaults: defaults)
+
+    XCTAssertEqual(store.preferences.fontSize, 19)
+    XCTAssertEqual(store.preferences.fontFamily, .monospaced)
+    XCTAssertEqual(store.preferences.rightMargin, .wide)
+    XCTAssertTrue(store.preferences.use24HourFormat)
+    XCTAssertFalse(store.preferences.showsMenuBarClock)
+  }
+
+  func testAppearanceResetKeepsTheMenuBarClockChoice() {
+    let store = PreferencesStore(defaults: defaults)
+    store.preferences.showsMenuBarClock = true
+
+    store.resetAppearanceAndFormat()
+
+    XCTAssertTrue(store.preferences.showsMenuBarClock)
+  }
+
+  private func notchedDisplay() -> DisplayDescriptor {
+    DisplayDescriptor(
       id: "built-in",
       localizedName: "Built-in Retina Display",
       displayID: 1,
       isBuiltIn: true,
       frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
       topRightSafeArea: CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
-    )
-
-    XCTAssertEqual(
-      display.placementBounds,
-      CGRect(x: 848.5, y: 0, width: 663.5, height: 950)
     )
   }
 

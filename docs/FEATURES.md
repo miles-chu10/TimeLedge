@@ -4,8 +4,8 @@
 
 | Capability | TimeLedge contract | Evidence gate |
 | --- | --- | --- |
-| Hidden menu bar | Automatic mode shows the clock when per-display geometry says the menu bar is hidden | Policy tests plus manual hidden-menu-bar check |
-| Fullscreen | A Spaces change plus a recent ordinary-to-full-display window transition verifies fullscreen without Accessibility permission | Transition/coverage tests plus manual Safari/QuickTime check |
+| Hidden menu bar | Automatic mode shows the clock whenever the system menu bar is not drawn on the display, by direct window observation or per-display geometry | Menu-bar presence and policy tests plus manual hidden-menu-bar check |
+| Fullscreen | The vacated menu bar plus notch-safe full-display window coverage identifies fullscreen without Accessibility permission, including Spaces entered before launch | Presence/coverage tests plus manual Safari/QuickTime check |
 | Built-in display | Built-in display is enabled by default | Unit test plus runtime settings list |
 | Multiple displays | Connected displays are detected and enabled independently | Unit policy test plus hot-plug check |
 | Format | 12/24-hour, seconds, date, weekday, and custom pattern | Formatter tests |
@@ -14,8 +14,8 @@
 | Readability | Optional background per display with adjustable opacity | Store test plus runtime inspection |
 | Privacy-dot margin | Default and wide right margins | Placement tests plus camera/mic indicator check |
 | Window level | Over-apps and behind-apps choices | Static mapping review plus manual stacking check |
-| Visible menu bar | Shared formatter renders TimeLedge as a real `NSStatusItem` clock in the system-managed band | App test plus live menu-bar inspection |
-| Low friction | Click-through overlay and menu-bar clock/recovery path | Static panel review plus click test |
+| Visible menu bar | An icon-only `NSStatusItem` carries the controls; the formatted text clock is opt-in so it never duplicates the system clock | App test plus live menu-bar inspection |
+| Low friction | Click-through overlay and a menu-bar control item | Static panel review plus click test |
 | Persistence | Preferences and per-display choices survive relaunch | Store tests |
 | Reveal safety | Moving the pointer into the top reveal band suppresses the overlay briefly | Policy test plus manual pointer check |
 
@@ -24,9 +24,9 @@
 - TimeLedge supports every system locale that `DateFormatter` can render instead
   of limiting the UI to a fixed language list.
 - It is free under MIT and contains no network or analytics path.
-- External displays are opt-in so the requested MacBook built-in-display behavior
-  is the safe default. A desktop Mac with no built-in display falls back to its
-  first active screen.
+- On a Mac with a built-in display, extra monitors are opt-in so the requested
+  built-in-display behavior is the safe default. A desktop Mac has no built-in
+  display, so every display it has is enabled by default.
 
 ## Out of scope for 0.1.0
 

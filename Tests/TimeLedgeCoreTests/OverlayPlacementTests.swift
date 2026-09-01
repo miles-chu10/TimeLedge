@@ -60,6 +60,28 @@ final class OverlayPlacementTests: XCTestCase {
     XCTAssertEqual(frame, CGRect(x: 1320, y: 939, width: 180, height: 40))
   }
 
+  func testCentersClockInsideTheFreedMenuBarStrip() {
+    let frame = OverlayPlacement.frame(
+      in: CGRect(x: 848.5, y: 950, width: 663.5, height: 32),
+      contentSize: CGSize(width: 131, height: 16),
+      rightMargin: 12,
+      alignment: .centered
+    )
+
+    XCTAssertEqual(frame, CGRect(x: 1369, y: 958, width: 131, height: 16))
+  }
+
+  func testCenteredClockTallerThanTheStripFallsBackToTheTopAnchor() {
+    let frame = OverlayPlacement.frame(
+      in: CGRect(x: 848.5, y: 950, width: 663.5, height: 32),
+      contentSize: CGSize(width: 180, height: 40),
+      rightMargin: 12,
+      alignment: .centered
+    )
+
+    XCTAssertEqual(frame, CGRect(x: 1320, y: 939, width: 180, height: 40))
+  }
+
   func testMaximumContentWidthAccountsForBackgroundPadding() {
     XCTAssertEqual(
       OverlayPlacement.maximumContentWidth(

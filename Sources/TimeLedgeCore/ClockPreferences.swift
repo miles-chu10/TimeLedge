@@ -72,6 +72,9 @@ public enum ClockWindowLayer: String, CaseIterable, Codable, Identifiable {
 
 public struct ClockPreferences: Codable, Equatable {
   public var isClockVisible: Bool
+  /// Opt-in text clock in the real menu bar. Off by default: macOS already
+  /// shows a menu-bar clock there, and a second one is pure duplication.
+  public var showsMenuBarClock: Bool
   public var use24HourFormat: Bool
   public var showSeconds: Bool
   public var showDate: Bool
@@ -90,6 +93,7 @@ public struct ClockPreferences: Codable, Equatable {
 
   public init(
     isClockVisible: Bool = true,
+    showsMenuBarClock: Bool = false,
     use24HourFormat: Bool = false,
     showSeconds: Bool = false,
     showDate: Bool = true,
@@ -107,6 +111,7 @@ public struct ClockPreferences: Codable, Equatable {
     launchAtLogin: Bool = false
   ) {
     self.isClockVisible = isClockVisible
+    self.showsMenuBarClock = showsMenuBarClock
     self.use24HourFormat = use24HourFormat
     self.showSeconds = showSeconds
     self.showDate = showDate
@@ -125,6 +130,57 @@ public struct ClockPreferences: Codable, Equatable {
   }
 
   public static let defaults = ClockPreferences()
+
+  private enum CodingKeys: String, CodingKey {
+    case isClockVisible
+    case showsMenuBarClock
+    case use24HourFormat
+    case showSeconds
+    case showDate
+    case showWeekday
+    case customFormatEnabled
+    case customFormat
+    case fontFamily
+    case fontWeight
+    case fontSize
+    case textColor
+    case textOpacity
+    case backgroundOpacity
+    case rightMargin
+    case windowLayer
+    case launchAtLogin
+  }
+
+  /// Decodes tolerantly so that preferences written by an older build -- which
+  /// has no entry for a key added later -- keep every setting the user chose
+  /// instead of resetting the whole record to defaults.
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let fallback = ClockPreferences()
+    func decode<T: Decodable>(_ key: CodingKeys, or defaultValue: T) throws -> T {
+      try container.decodeIfPresent(T.self, forKey: key) ?? defaultValue
+    }
+
+    self.init(
+      isClockVisible: try decode(.isClockVisible, or: fallback.isClockVisible),
+      showsMenuBarClock: try decode(.showsMenuBarClock, or: fallback.showsMenuBarClock),
+      use24HourFormat: try decode(.use24HourFormat, or: fallback.use24HourFormat),
+      showSeconds: try decode(.showSeconds, or: fallback.showSeconds),
+      showDate: try decode(.showDate, or: fallback.showDate),
+      showWeekday: try decode(.showWeekday, or: fallback.showWeekday),
+      customFormatEnabled: try decode(.customFormatEnabled, or: fallback.customFormatEnabled),
+      customFormat: try decode(.customFormat, or: fallback.customFormat),
+      fontFamily: try decode(.fontFamily, or: fallback.fontFamily),
+      fontWeight: try decode(.fontWeight, or: fallback.fontWeight),
+      fontSize: try decode(.fontSize, or: fallback.fontSize),
+      textColor: try decode(.textColor, or: fallback.textColor),
+      textOpacity: try decode(.textOpacity, or: fallback.textOpacity),
+      backgroundOpacity: try decode(.backgroundOpacity, or: fallback.backgroundOpacity),
+      rightMargin: try decode(.rightMargin, or: fallback.rightMargin),
+      windowLayer: try decode(.windowLayer, or: fallback.windowLayer),
+      launchAtLogin: try decode(.launchAtLogin, or: fallback.launchAtLogin)
+    )
+  }
 }
 
 public struct DisplayPreference: Codable, Equatable {

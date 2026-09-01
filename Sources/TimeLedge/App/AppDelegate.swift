@@ -50,14 +50,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       self?.statusItemController.refresh()
     }
 
-    visibilityMonitor.onChange = { [weak self] displayIDs in
-      self?.overlayCoordinator.setAutomaticallyVisibleDisplayIDs(displayIDs)
+    visibilityMonitor.onChange = { [weak self] state in
+      self?.overlayCoordinator.setVisibilityState(state)
     }
 
     overlayCoordinator.start()
     visibilityMonitor.appIsEnabled = store.preferences.isClockVisible
     visibilityMonitor.mode = store.visibilityMode
     visibilityMonitor.start()
+
+    if arguments.contains("--diagnose") {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+        guard let self else { return }
+        print("TimeLedge visibility diagnostics")
+        print(self.visibilityMonitor.diagnosticsReport())
+        NSApp.terminate(nil)
+      }
+      return
+    }
 
     if arguments.contains("--show-settings") {
       DispatchQueue.main.async { [weak self] in

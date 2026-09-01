@@ -63,6 +63,24 @@ final class MenuBarPresenceTests: XCTestCase {
     XCTAssertNil(tracker.update(menuBarWindows: windows, displays: [builtIn])["built-in"])
   }
 
+  func testUnreadableWindowListRepeatsTheLastAnswerInsteadOfClaimingHidden() {
+    var tracker = MenuBarPresenceTracker()
+    _ = tracker.update(
+      menuBarWindows: [menuBar(x: 0, width: 1512, height: 24)],
+      displays: [builtIn]
+    )
+
+    XCTAssertEqual(tracker.update(menuBarWindows: nil, displays: [builtIn])["built-in"], true)
+    XCTAssertEqual(tracker.update(menuBarWindows: [], displays: [builtIn])["built-in"], false)
+    XCTAssertEqual(tracker.update(menuBarWindows: nil, displays: [builtIn])["built-in"], false)
+  }
+
+  func testUnreadableWindowListBeforeCalibrationStaysUnknown() {
+    var tracker = MenuBarPresenceTracker()
+
+    XCTAssertNil(tracker.update(menuBarWindows: nil, displays: [builtIn])["built-in"])
+  }
+
   func testDisconnectedDisplaysLoseCalibration() {
     var tracker = MenuBarPresenceTracker()
     _ = tracker.update(

@@ -41,15 +41,27 @@ public struct MenuBarDisplaySample: Equatable, Sendable {
 /// and window-coverage evidence when the answer is unknown.
 public struct MenuBarPresenceTracker: Sendable {
   public private(set) var calibratedDisplayIDs: Set<String> = []
+  private var lastPresence: [String: Bool] = [:]
 
   public init() {}
 
   /// Returns `displayID -> menu bar is on screen`, omitting displays whose menu
   /// bar has never been observed.
+  ///
+  /// `menuBarWindows` is `nil` when the window list could not be read at all.
+  /// That is deliberately not treated as "no menu bar anywhere": the last known
+  /// answer is repeated instead, because reporting every calibrated display as
+  /// hidden would show the clock on top of a menu bar that is still drawn.
   public mutating func update(
-    menuBarWindows: [MenuBarWindowSample],
+    menuBarWindows: [MenuBarWindowSample]?,
     displays: [MenuBarDisplaySample]
   ) -> [String: Bool] {
+    guard let menuBarWindows else {
+      return lastPresence.filter { entry in
+        displays.contains { $0.id == entry.key }
+      }
+    }
+
     var presence: [String: Bool] = [:]
     for display in displays {
       let isVisible = menuBarWindows.contains { window in
@@ -61,12 +73,14 @@ public struct MenuBarPresenceTracker: Sendable {
       guard calibratedDisplayIDs.contains(display.id) else { continue }
       presence[display.id] = isVisible
     }
+    lastPresence = presence
     return presence
   }
 
   /// Forgets calibration for displays that are no longer connected.
   public mutating func retainCalibration(for displayIDs: Set<String>) {
     calibratedDisplayIDs.formIntersection(displayIDs)
+    lastPresence = lastPresence.filter { displayIDs.contains($0.key) }
   }
 
   public static func sample(

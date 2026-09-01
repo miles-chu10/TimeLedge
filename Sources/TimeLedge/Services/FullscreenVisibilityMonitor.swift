@@ -129,8 +129,11 @@ final class FullscreenVisibilityMonitor: NSObject {
     // A one-shot run inside a fullscreen Space cannot calibrate the tracker,
     // because calibration needs to see the menu bar at least once. The raw
     // sample list still shows whether the probe reads the window server at all.
-    var lines = ["menu-bar layer windows found: \(samples.count)"]
-    lines += samples.map { sample in
+    var lines = [
+      "menu-bar layer windows found: "
+        + (samples.map { String($0.count) } ?? "window list unreadable")
+    ]
+    lines += (samples ?? []).map { sample in
       "  bounds \(NSStringFromRect(sample.bounds)) alpha \(sample.alpha)"
     }
     lines.append("")

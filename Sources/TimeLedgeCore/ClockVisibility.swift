@@ -78,9 +78,12 @@ public enum ClockVisibilityPolicy {
       return false
     }
 
-    // The system menu bar is drawn on this display, so the system clock is
-    // already there. Never duplicate it, whatever the frontmost window covers.
-    if evidence.menuBarWindowIsVisible == true, !evidence.menuBarIsHiddenByGeometry {
+    // A positive probe observation is authoritative: the system menu bar is
+    // drawn on this display, so the system clock is already there and must not
+    // be duplicated. Geometry cannot overrule it -- with the system set to
+    // auto-hide the menu bar, `visibleFrame` reports full height even while the
+    // menu bar is revealed, so geometry cannot see the difference at all.
+    if evidence.menuBarWindowIsVisible == true {
       return false
     }
 

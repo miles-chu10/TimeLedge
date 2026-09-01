@@ -68,14 +68,20 @@ changes that have no reliable notification. It gathers three independent pieces
 of evidence per display and runs them through the pure `ClockVisibilityPolicy`:
 
 1. **Menu-bar window presence.** `MenuBarWindowProbe` lists on-screen windows in
-   the public main-menu window level and matches them to display top edges;
+   the public main-menu window level, keeps only the window server's own menu
+   bar -- that level is public, so any process can put a window there -- and
+   matches them to display top edges;
    `MenuBarPresenceTracker` turns that into "the menu bar is (not) drawn on this
    display". This is a direct observation of the condition the app exists for,
    so it works on launch inside a fullscreen Space, across Space switches, and
    with the system auto-hide setting. The tracker self-calibrates: a display
    reports *hidden* only after its menu bar has actually been seen once, so an
    unexpected window-server layout reports *unknown* and the other evidence
-   decides.
+   decides. A window list that cannot be read at all is distinct from an empty
+   one: the tracker repeats its last answer rather than claiming every menu bar
+   just disappeared. A menu bar the probe positively sees is authoritative and
+   geometry cannot overrule it, because with the system set to auto-hide the
+   menu bar `visibleFrame` reports full height either way.
 2. **Menu-bar geometry.** `NSScreen.frame` versus `visibleFrame`.
 3. **Frontmost-window coverage.** Notch-safe full-display coverage of the
    frontmost application's windows.

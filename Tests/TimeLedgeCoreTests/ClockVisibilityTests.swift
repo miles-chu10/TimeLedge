@@ -51,12 +51,16 @@ final class ClockVisibilityTests: XCTestCase {
     }
   }
 
-  func testHiddenMenuBarGeometryStillWinsWhenTheProbeDisagrees() {
+  func testRevealedMenuBarSuppressesTheClockEvenWhenGeometryCannotSeeIt() {
+    // With the system set to auto-hide the menu bar, visibleFrame reports full
+    // height whether or not the menu bar is currently drawn, so only the probe
+    // can tell the difference.
     var evidence = affirmative
+    evidence.menuBarIsHiddenByGeometry = true
     evidence.menuBarWindowIsVisible = true
     evidence.frontmostWindowCoversDisplay = false
 
-    XCTAssertTrue(
+    XCTAssertFalse(
       ClockVisibilityPolicy.shouldShowClock(mode: .automatic, evidence: evidence)
     )
   }

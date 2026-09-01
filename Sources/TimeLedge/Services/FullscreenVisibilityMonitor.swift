@@ -120,11 +120,22 @@ final class FullscreenVisibilityMonitor: NSObject {
 
   /// Human-readable evidence for every display, used by `--diagnose`.
   func diagnosticsReport() -> String {
+    let samples = menuBarProbe.samples()
     let readings = currentReadings()
     guard !readings.isEmpty else {
       return "No displays reported."
     }
-    return readings.map { reading in
+
+    // A one-shot run inside a fullscreen Space cannot calibrate the tracker,
+    // because calibration needs to see the menu bar at least once. The raw
+    // sample list still shows whether the probe reads the window server at all.
+    var lines = ["menu-bar layer windows found: \(samples.count)"]
+    lines += samples.map { sample in
+      "  bounds \(NSStringFromRect(sample.bounds)) alpha \(sample.alpha)"
+    }
+    lines.append("")
+
+    lines += readings.map { reading in
       let menuBarWindow: String
       switch reading.evidence.menuBarWindowIsVisible {
       case .some(true): menuBarWindow = "visible"
@@ -143,7 +154,7 @@ final class FullscreenVisibilityMonitor: NSObject {
           decision: \(reading.shouldShow ? "show" : "hide")
         """
     }
-    .joined(separator: "\n")
+    return lines.joined(separator: "\n")
   }
 
   private struct DisplayReading {
@@ -223,8 +234,10 @@ final class FullscreenVisibilityMonitor: NSObject {
       if reading.shouldShow {
         state.visibleDisplayIDs.insert(reading.id)
       }
-      // An uncalibrated probe means "unknown"; treat the menu bar as present so
-      // the clock stays clear of the strip until the probe has seen it once.
+      // The probe answers directly when it is calibrated for this display.
+      // Until then the answer is unknown, so the geometry evidence stands in:
+      // a menu bar that geometry does not report as hidden is treated as drawn,
+      // which keeps the clock below the strip rather than under a real menu bar.
       if reading.evidence.menuBarWindowIsVisible ?? !reading.evidence.menuBarIsHiddenByGeometry {
         state.menuBarVisibleDisplayIDs.insert(reading.id)
       }

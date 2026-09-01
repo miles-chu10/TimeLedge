@@ -22,6 +22,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     visibilityMonitor = FullscreenVisibilityMonitor(displayProvider: displayProvider)
 
+    // Diagnostics report and exit. This runs before the status item, settings
+    // window, overlay panels, and monitor loop exist, so reading the evidence
+    // never changes what it is measuring.
+    if arguments.contains("--diagnose") {
+      visibilityMonitor.appIsEnabled = store.preferences.isClockVisible
+      visibilityMonitor.mode = store.visibilityMode
+      print("TimeLedge visibility diagnostics")
+      print(visibilityMonitor.diagnosticsReport())
+      NSApp.terminate(nil)
+      return
+    }
+
     settingsWindowController = SettingsWindowController(
       store: store,
       onSetLaunchAtLogin: { [weak self] enabled in
@@ -58,16 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     visibilityMonitor.appIsEnabled = store.preferences.isClockVisible
     visibilityMonitor.mode = store.visibilityMode
     visibilityMonitor.start()
-
-    if arguments.contains("--diagnose") {
-      DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-        guard let self else { return }
-        print("TimeLedge visibility diagnostics")
-        print(self.visibilityMonitor.diagnosticsReport())
-        NSApp.terminate(nil)
-      }
-      return
-    }
 
     if arguments.contains("--show-settings") {
       DispatchQueue.main.async { [weak self] in

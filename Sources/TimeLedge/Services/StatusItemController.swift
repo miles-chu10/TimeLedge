@@ -8,10 +8,17 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   private let onOpenSettings: () -> Void
   private let onSetLaunchAtLogin: (Bool) -> Void
   private var clockTimer: Timer?
+  private var renderedTitle: String?
+  private var hasRendered = false
 
   private lazy var showClockItem = NSMenuItem(
     title: "Show Clock",
     action: #selector(toggleClock),
+    keyEquivalent: ""
+  )
+  private lazy var showMenuBarClockItem = NSMenuItem(
+    title: "Show Time in Menu Bar",
+    action: #selector(toggleMenuBarClock),
     keyEquivalent: ""
   )
   private lazy var launchAtLoginItem = NSMenuItem(
@@ -47,8 +54,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     let menu = NSMenu()
     menu.delegate = self
     showClockItem.target = self
+    showMenuBarClockItem.target = self
     launchAtLoginItem.target = self
     menu.addItem(showClockItem)
+    menu.addItem(showMenuBarClockItem)
     menu.addItem(NSMenuItem.separator())
 
     let settingsItem = NSMenuItem(
@@ -71,22 +80,33 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     statusItem.menu = menu
   }
 
+  /// The text to draw in the real menu bar, or `nil` for the icon-only item.
+  ///
+  /// macOS already draws a menu-bar clock, so TimeLedge stays an icon unless
+  /// the user explicitly opts in to a second one.
   static func menuBarTitle(
     at date: Date,
     preferences: ClockPreferences,
     isClockVisible: Bool
   ) -> String? {
-    guard isClockVisible else { return nil }
+    guard isClockVisible, preferences.showsMenuBarClock else { return nil }
     return ClockFormatter.string(from: date, preferences: preferences)
   }
 
   func refresh() {
     guard let button = statusItem.button else { return }
-    if let title = Self.menuBarTitle(
+    let title = Self.menuBarTitle(
       at: Date(),
       preferences: store.preferences,
       isClockVisible: store.preferences.isClockVisible
-    ) {
+    )
+    guard title != renderedTitle || !hasRendered else {
+      return
+    }
+    hasRendered = true
+    renderedTitle = title
+
+    if let title {
       statusItem.length = NSStatusItem.variableLength
       button.image = nil
       button.imagePosition = .noImage
@@ -115,11 +135,16 @@ final class StatusItemController: NSObject, NSMenuDelegate {
   func menuNeedsUpdate(_ menu: NSMenu) {
     refresh()
     showClockItem.state = store.preferences.isClockVisible ? .on : .off
+    showMenuBarClockItem.state = store.preferences.showsMenuBarClock ? .on : .off
     launchAtLoginItem.state = store.preferences.launchAtLogin ? .on : .off
   }
 
   @objc private func toggleClock() {
     store.preferences.isClockVisible.toggle()
+  }
+
+  @objc private func toggleMenuBarClock() {
+    store.preferences.showsMenuBarClock.toggle()
   }
 
   @objc private func openSettings() {

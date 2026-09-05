@@ -5,6 +5,7 @@ import TimeLedgeCore
 final class StatusItemController: NSObject, NSMenuDelegate {
   private let store: PreferencesStore
   private let statusItem: NSStatusItem
+  private var accessibilityTimer: Timer?
   private let onOpenSettings: () -> Void
   private let onSetLaunchAtLogin: (Bool) -> Void
 
@@ -34,6 +35,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     statusItem.isVisible = true
     statusItem.button?.toolTip = "TimeLedge"
     refresh()
+    if let button = statusItem.button {
+      accessibilityTimer = Self.scheduleAccessibilityUpdates(button: button) { [weak store] in
+        store?.preferences ?? .defaults
+      }
+    }
 
     let menu = NSMenu()
     menu.delegate = self
@@ -117,10 +123,37 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     button.image = Self.statusItemImage()
     button.imagePosition = .imageOnly
 
+    Self.updateAccessibilityLabel(button: button, at: Date(), preferences: store.preferences)
+  }
+
+  /// Refresh only the spoken time; the icon and menu need no per-second work.
+  static func scheduleAccessibilityUpdates(
+    button: NSButton,
+    now: @escaping () -> Date = Date.init,
+    preferences: @escaping () -> ClockPreferences
+  ) -> Timer {
+    let timer = Timer(timeInterval: 1, repeats: true) { [weak button] timer in
+      guard let button else {
+        timer.invalidate()
+        return
+      }
+      MainActor.assumeIsolated {
+        updateAccessibilityLabel(button: button, at: now(), preferences: preferences())
+      }
+    }
+    RunLoop.main.add(timer, forMode: .common)
+    return timer
+  }
+
+  private static func updateAccessibilityLabel(
+    button: NSButton,
+    at date: Date,
+    preferences: ClockPreferences
+  ) {
     if let title = Self.menuBarTitle(
-      at: Date(),
-      preferences: store.preferences,
-      isClockVisible: store.preferences.isClockVisible
+      at: date,
+      preferences: preferences,
+      isClockVisible: preferences.isClockVisible
     ) {
       button.setAccessibilityLabel("TimeLedge \(title)")
     } else {
@@ -128,7 +161,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
   }
 
+  deinit {
+    accessibilityTimer?.invalidate()
+  }
+
   func stop() {
+    accessibilityTimer?.invalidate()
+    accessibilityTimer = nil
     NSStatusBar.system.removeStatusItem(statusItem)
   }
 

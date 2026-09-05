@@ -40,6 +40,41 @@ final class OverlayPlacementTests: XCTestCase {
     }
   }
 
+  func testOversizedClockPreservesHeightAndOverflowsDownward() {
+    // 41 points is the measured 28-point ClockView with background padding.
+    for top: CGFloat in [982, 2062, -98, -98.25, 982.75] {
+      for bandHeight: CGFloat in [22, 24, 32, 41, 48] {
+        for height: CGFloat in [33, 40, 41, 41.25] {
+          let band = CGRect(x: -1920, y: top - bandHeight, width: 1920, height: bandHeight)
+          let frame = OverlayPlacement.frame(
+            in: band, contentSize: CGSize(width: 180, height: height), rightMargin: 12
+          )
+          XCTAssertEqual(frame.height, height.rounded(.up))
+          XCTAssertLessThanOrEqual(frame.maxY, top)
+          XCTAssertEqual(frame.maxX, -12)
+          if frame.height >= bandHeight {
+            XCTAssertLessThanOrEqual(frame.minY, band.minY)
+            XCTAssertLessThan(top - frame.maxY, 1)
+          } else {
+            XCTAssertEqual(frame.midY, band.midY, accuracy: 0.5)
+          }
+        }
+      }
+    }
+    let historicalFrame = OverlayPlacement.frame(
+      in: notchedBand, contentSize: CGSize(width: 180, height: 40), rightMargin: 12
+    )
+    XCTAssertEqual(historicalFrame, CGRect(x: 1320, y: 942, width: 180, height: 40))
+  }
+
+  func testPositiveOffsetCannotPushClockAbovePhysicalTop() {
+    let frame = OverlayPlacement.frame(
+      in: notchedBand, contentSize: CGSize(width: 120, height: 16),
+      rightMargin: 12, verticalOffset: 20
+    )
+    XCTAssertEqual(frame.maxY, notchedScreen.maxY)
+  }
+
   func testPlacesClockAtTopRightWithinTheRightMargin() {
     let frame = OverlayPlacement.frame(
       in: notchedBand,

@@ -26,9 +26,10 @@ draws a clock while the menu bar is visible, so `StatusItemController` owns a
 square `NSStatusItem` carrying identity and controls rather than a second time
 readout: the app icon, or the `clock` SF Symbol as a template fallback when no
 bundle icon is available. The configured `ClockFormatter` output stays on the
-button's accessibility label, so VoiceOver still reads the time. Because nothing
-in the item renders time, it has no per-second timer; `menuNeedsUpdate` refreshes
-the label when the menu opens. The status item uses an autosave name so user
+button's accessibility label, so VoiceOver still reads the time. A lightweight
+one-second timer refreshes only that label, including while the menu is closed.
+It reads current preferences, holds the button weakly, and is invalidated when
+the controller stops or is released; menu and preference changes also refresh it. The status item uses an autosave name so user
 positioning persists.
 
 ## Window contract
@@ -54,7 +55,10 @@ intentionally avoids status-bar/screen-saver levels and private window APIs.
 occupies at the very top of a display — and `OverlayPlacement.frame` centers the
 clock inside it. That puts TimeLedge on the same line the system clock uses,
 which is the whole point of the product; anchoring below the band's bottom edge
-put the clock a full menu-bar height too low.
+put the clock a full menu-bar height too low. Content taller than the band keeps
+its measured height and chosen style, with its top constrained to the display
+top after rounding; the excess extends downward instead of being clipped or
+scaled. Content that fits retains normal band centering.
 
 The band height comes from the best available source per display:
 

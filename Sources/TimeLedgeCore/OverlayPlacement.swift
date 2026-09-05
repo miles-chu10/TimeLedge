@@ -11,7 +11,8 @@ public enum OverlayPlacement {
   }
 
   /// Places the clock at the trailing edge of `placementBounds` and centers it
-  /// vertically inside those bounds.
+  /// vertically inside those bounds when it fits. Taller content keeps its full
+  /// height and overflows downward, never above the physical display top.
   ///
   /// `placementBounds` is the menu-bar band itself, so centering puts the clock
   /// on the same baseline as the system clock. Anchoring below the band's bottom
@@ -33,7 +34,9 @@ public enum OverlayPlacement {
     let y = placementBounds.midY - height / 2 + verticalOffset
     return CGRect(
       x: max(placementBounds.minX, x).rounded(),
-      y: y.rounded(),
+      // Clamp after rounding so fractional global coordinates cannot push the
+      // top edge off-screen. Preserve the measured height and chosen style.
+      y: min(y.rounded(), (placementBounds.maxY - height).rounded(.down)),
       width: width,
       height: height
     )

@@ -55,6 +55,13 @@ clock is then laid out in one of two bands:
 - menu bar on screen: anchored below the strip, because the documented
   `.floating` level renders under the real menu bar
 
+On displays without a notch, the provider remembers the last visible menu-bar
+height from `visibleFrame` and retains it while fullscreen hides the bar. Space
+changes refresh the stored display descriptors so newly learned geometry is used
+on subsequent fullscreen entries. Oversized clock content retains its measured
+height and uses the existing top anchor; rounding cannot move its top edge above
+the display or enlarge its width past the available band.
+
 Fullscreen coverage uses a separate hardware-notch inset so a maximized window
 below an ordinary visible menu bar cannot be mistaken for fullscreen. Coordinates
 remain in macOS global point space, including negative external-display

@@ -20,10 +20,14 @@ public enum OverlayPlacement {
     max(1, placementBounds.width - max(0, rightMargin) - max(0, horizontalPadding))
   }
 
+  /// Places the clock at the trailing edge of its band. Centered content that
+  /// fits uses the band's midpoint; top-aligned or taller content uses the top
+  /// anchor. The full measured height stays below the physical display top.
   public static func frame(
     in placementBounds: CGRect,
     contentSize: CGSize,
     rightMargin: CGFloat,
+    verticalOffset: CGFloat = 0,
     topMargin: CGFloat = 3,
     alignment: OverlayVerticalAlignment = .top
   ) -> CGRect {
@@ -32,21 +36,42 @@ public enum OverlayPlacement {
       in: placementBounds,
       rightMargin: safeRightMargin
     )
-    let width = min(max(1, contentSize.width), availableWidth)
-    let height = max(1, contentSize.height)
+    let width = min(max(1, contentSize.width).rounded(.up), availableWidth.rounded(.down))
+    let height = max(1, contentSize.height).rounded(.up)
     let x = placementBounds.maxX - safeRightMargin - width
     let y: CGFloat
     switch alignment {
     case .centered where height <= placementBounds.height:
-      y = placementBounds.midY - height / 2
+      y = placementBounds.midY - height / 2 + verticalOffset
     case .centered, .top:
-      y = placementBounds.maxY - topMargin - height
+      y = placementBounds.maxY - topMargin - height + verticalOffset
     }
     return CGRect(
       x: max(placementBounds.minX, x),
-      y: y,
+      // Clamp after rounding so fractional global coordinates cannot push the
+      // top edge off-screen. Preserve the measured height and chosen style.
+      y: min(y.rounded(), (placementBounds.maxY - height).rounded(.down)),
       width: width,
       height: height
-    ).integral
+    )
+  }
+
+  /// The menu-bar band for a display, given the best available band height.
+  ///
+  /// The band is the strip the system menu bar occupies at the top of the
+  /// display; in a fullscreen Space it is empty and the clock draws there.
+  public static func menuBarBand(
+    screenFrame: CGRect,
+    bandHeight: CGFloat,
+    minimumX: CGFloat? = nil
+  ) -> CGRect {
+    let height = min(max(1, bandHeight), screenFrame.height)
+    let originX = min(max(minimumX ?? screenFrame.minX, screenFrame.minX), screenFrame.maxX - 1)
+    return CGRect(
+      x: originX,
+      y: screenFrame.maxY - height,
+      width: screenFrame.maxX - originX,
+      height: height
+    )
   }
 }

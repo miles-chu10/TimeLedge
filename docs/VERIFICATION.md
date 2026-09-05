@@ -1,5 +1,13 @@
 # Verification record
 
+## PR #1 integration with the current menu-bar detection code
+
+The integration retains the direct menu-bar observation and optional status clock
+from main commit `7b32572`, then adds measured-band geometry refresh and rounded
+clock containment. Its final native suite and live window/accessibility matrix
+are pending. The earlier test and hardware observations below apply only to their
+named historical snapshots and do not certify this integration.
+
 Prior baseline verified 2026-08-30 on:
 
 - macOS 27.0 (26A5421a), Apple silicon
@@ -118,6 +126,41 @@ Still required before release, because no Linux container can produce it:
   menu bar can cover it when visible.
 - The menu-bar probe reads window metadata only. It requests no new entitlement,
   permission, or private API, and it never captures screen content.
+
+## Menu-bar band placement verified 2026-08-31
+
+Toolchain: Xcode 27.0 beta, Apple Swift 6.4, macOS 27.0, Apple silicon. Displays:
+built-in Retina (notched) and ASUS VG249.
+
+- `./script/codex-test.sh` passed 66 XCTest cases with zero failures
+  (42 in `TimeLedgeCoreTests`, 24 in `TimeLedgeAppTests`).
+- `./script/codex-build.sh` built and ad-hoc signed `dist/TimeLedge.app`.
+- `swift-format lint --strict --recursive` passed for `Package.swift`, `Sources`,
+  and `Tests`.
+- The Window Server's own `Menubar` window reports the built-in display's band as
+  `(0, 949, 1512, 33)` in AppKit coordinates.
+- A signed helper bundle entered a real native fullscreen Space with the pointer
+  parked at screen centre. With the shipping `Automatic` default, Core Graphics
+  reported exactly one on-screen TimeLedge overlay at `NSWindow.Level.floating`,
+  frame `(1369, 957, 131, 16)` — occupying 957…973 against a band of 949…982,
+  a centre offset of 0.5 pt. No overlay was on screen before entering fullscreen
+  or after leaving it.
+- `Always` mode placed the overlay at the same frame on the desktop, confirming
+  that placement does not depend on the visibility decision.
+
+### Known intermittency, not fixed here
+
+Across eight helper runs that reached a confirmed `didEnterFullScreen`, the
+overlay appeared in six. Placement was correct in every run in which it
+appeared; the two misses were the overlay not being shown at all.
+
+`FullscreenTransitionDetector.update` verifies a transition only when the window
+began covering the display no more than `preTransitionTolerance` (0.25 s) before
+`NSWorkspace.activeSpaceDidChangeNotification` arrives, and the monitor samples
+coverage on a 250 ms poll. When the poll observes coverage early, that window can
+never be verified, because `coveringBeganAt` is cleared only when the window
+stops covering. Widening the tolerance moves a boundary this repository treats as
+P1, so it is recorded here rather than changed.
 
 ## Manual-only remainder
 

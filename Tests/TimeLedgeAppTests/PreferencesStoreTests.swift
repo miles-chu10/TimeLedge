@@ -33,7 +33,7 @@ final class PreferencesStoreTests: XCTestCase {
     XCTAssertFalse(store.preference(for: external.id).isEnabled)
   }
 
-  func testDesktopMacFallsBackToFirstDisplay() {
+  func testDesktopMacEnablesEveryExternalDisplayItHas() {
     let store = PreferencesStore(defaults: defaults)
     let first = descriptor(id: "first", builtIn: false)
     let second = descriptor(id: "second", builtIn: false)
@@ -41,7 +41,7 @@ final class PreferencesStoreTests: XCTestCase {
     store.synchronize(displays: [first, second])
 
     XCTAssertTrue(store.preference(for: first.id).isEnabled)
-    XCTAssertFalse(store.preference(for: second.id).isEnabled)
+    XCTAssertTrue(store.preference(for: second.id).isEnabled)
   }
 
   func testPreferencesPersistAcrossStoreInstances() {
@@ -91,23 +91,10 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
       safeAreaTop: 32,
       statusBarThickness: 22,
-      menuBarHeight: 0,
       auxiliaryTopRightArea: CGRect(x: -226, y: 918, width: 663.5, height: 32)
     )
 
     XCTAssertEqual(bounds, CGRect(x: 848.5, y: 950, width: 663.5, height: 32))
-  }
-
-  func testTopRightPlacementPrefersObservedMenuBarHeightOverThinnerAuxiliaryArea() {
-    let bounds = SystemDisplayProvider.topRightPlacementBounds(
-      screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
-      safeAreaTop: 32,
-      statusBarThickness: 22,
-      menuBarHeight: 34,
-      auxiliaryTopRightArea: CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
-    )
-
-    XCTAssertEqual(bounds, CGRect(x: 848.5, y: 948, width: 663.5, height: 34))
   }
 
   func testTopRightPlacementUsesRightHalfForNotchedScreenFallback() {
@@ -115,7 +102,6 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: -1512, y: 100, width: 1512, height: 982),
       safeAreaTop: 32,
       statusBarThickness: 22,
-      menuBarHeight: 0,
       auxiliaryTopRightArea: nil
     )
 
@@ -127,32 +113,10 @@ final class PreferencesStoreTests: XCTestCase {
       screenFrame: CGRect(x: 0, y: -1080, width: 1920, height: 1080),
       safeAreaTop: 0,
       statusBarThickness: 24,
-      menuBarHeight: 30,
       auxiliaryTopRightArea: nil
     )
 
-    XCTAssertEqual(bounds, CGRect(x: 0, y: -30, width: 1920, height: 30))
-  }
-
-  func testObservedMenuBarHeightUsesVisibleFrameGap() {
-    XCTAssertEqual(
-      SystemDisplayProvider.observedMenuBarHeight(
-        screenFrame: CGRect(x: 0, y: 0, width: 1512, height: 982),
-        visibleFrame: CGRect(x: 0, y: 66, width: 1512, height: 882)
-      ),
-      34
-    )
-  }
-
-  func testObservedMenuBarHeightIsZeroWhenMenuBarIsHidden() {
-    let frame = CGRect(x: 0, y: 0, width: 1512, height: 982)
-    XCTAssertEqual(
-      SystemDisplayProvider.observedMenuBarHeight(
-        screenFrame: frame,
-        visibleFrame: frame
-      ),
-      0
-    )
+    XCTAssertEqual(bounds, CGRect(x: 0, y: -24, width: 1920, height: 24))
   }
 
   func testFullscreenEvidenceDoesNotIgnoreVisibleMenuBarOnNonNotchedDisplay() {
@@ -175,19 +139,63 @@ final class PreferencesStoreTests: XCTestCase {
     )
   }
 
-  func testDisplayPlacementUsesTheMenuBarBand() {
-    let band = CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
-    let display = DisplayDescriptor(
+  func testDisplayPlacementAnchorsBelowVisibleSystemTopStrip() {
+    XCTAssertEqual(
+      notchedDisplay().placementBounds(menuBarIsVisible: true),
+      CGRect(x: 848.5, y: 0, width: 663.5, height: 950)
+    )
+  }
+
+  func testDisplayPlacementTakesOverTheStripWhenTheMenuBarIsHidden() {
+    XCTAssertEqual(
+      notchedDisplay().placementBounds(menuBarIsVisible: false),
+      CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
+    )
+  }
+
+  func testLegacyPreferencesWithoutNewerKeysKeepEverySavedSetting() throws {
+    var saved = ClockPreferences.defaults
+    saved.fontSize = 19
+    saved.fontFamily = .monospaced
+    saved.rightMargin = .wide
+    saved.use24HourFormat = true
+
+    var json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: try JSONEncoder().encode(saved)) as? [String: Any]
+    )
+    json.removeValue(forKey: "showsMenuBarClock")
+    defaults.set(
+      try JSONSerialization.data(withJSONObject: json),
+      forKey: "TimeLedge.preferences.v1"
+    )
+
+    let store = PreferencesStore(defaults: defaults)
+
+    XCTAssertEqual(store.preferences.fontSize, 19)
+    XCTAssertEqual(store.preferences.fontFamily, .monospaced)
+    XCTAssertEqual(store.preferences.rightMargin, .wide)
+    XCTAssertTrue(store.preferences.use24HourFormat)
+    XCTAssertFalse(store.preferences.showsMenuBarClock)
+  }
+
+  func testAppearanceResetKeepsTheMenuBarClockChoice() {
+    let store = PreferencesStore(defaults: defaults)
+    store.preferences.showsMenuBarClock = true
+
+    store.resetAppearanceAndFormat()
+
+    XCTAssertTrue(store.preferences.showsMenuBarClock)
+  }
+
+  private func notchedDisplay() -> DisplayDescriptor {
+    DisplayDescriptor(
       id: "built-in",
       localizedName: "Built-in Retina Display",
       displayID: 1,
       isBuiltIn: true,
       frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
-      topRightSafeArea: band
+      topRightSafeArea: CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
     )
-
-    XCTAssertEqual(display.placementBounds, band)
-    XCTAssertEqual(display.placementBounds.maxY, display.frame.maxY)
   }
 
   private func descriptor(id: String, builtIn: Bool) -> DisplayDescriptor {

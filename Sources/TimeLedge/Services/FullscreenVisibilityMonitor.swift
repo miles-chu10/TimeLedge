@@ -1,9 +1,15 @@
 import AppKit
 import TimeLedgeCore
 
+/// Which displays should show the clock, and where the menu bar still is.
+struct DisplayVisibilityState: Equatable {
+  var visibleDisplayIDs: Set<String> = []
+  var menuBarVisibleDisplayIDs: Set<String> = []
+}
+
 @MainActor
 final class FullscreenVisibilityMonitor: NSObject {
-  var onChange: ((Set<String>) -> Void)?
+  var onChange: ((DisplayVisibilityState) -> Void)?
 
   var appIsEnabled = true {
     didSet { evaluate(force: true) }
@@ -14,13 +20,13 @@ final class FullscreenVisibilityMonitor: NSObject {
   }
 
   private let displayProvider: DisplayProviding
-  private let probe = FrontmostWindowProbe()
-  private var transitionDetector = FullscreenTransitionDetector()
+  private let windowProbe = FrontmostWindowProbe()
+  private let menuBarProbe = MenuBarWindowProbe()
+  private var presenceTracker = MenuBarPresenceTracker()
   private var timer: Timer?
   private var sessionIsActive = true
   private var revealHoldUntil: [String: Date] = [:]
-  private var lastVisibleDisplayIDs: Set<String>?
-  private var lastObservedWindowIdentities: Set<WindowIdentity> = []
+  private var lastState: DisplayVisibilityState?
 
   init(displayProvider: DisplayProviding) {
     self.displayProvider = displayProvider
@@ -30,7 +36,7 @@ final class FullscreenVisibilityMonitor: NSObject {
     let workspaceCenter = NSWorkspace.shared.notificationCenter
     workspaceCenter.addObserver(
       self,
-      selector: #selector(activeSpaceDidChange),
+      selector: #selector(environmentChanged),
       name: NSWorkspace.activeSpaceDidChangeNotification,
       object: nil
     )
@@ -102,14 +108,6 @@ final class FullscreenVisibilityMonitor: NSObject {
     evaluate(force: true)
   }
 
-  @objc private func activeSpaceDidChange() {
-    transitionDetector.noteSpaceChange(
-      at: Date.timeIntervalSinceReferenceDate,
-      previousWindowIdentities: lastObservedWindowIdentities
-    )
-    evaluate(force: true)
-  }
-
   @objc private func sessionDidResign() {
     sessionIsActive = false
     evaluate(force: true)
@@ -120,72 +118,139 @@ final class FullscreenVisibilityMonitor: NSObject {
     evaluate(force: true)
   }
 
-  private func evaluate(force: Bool) {
+  /// Human-readable evidence for every display, used by `--diagnose`.
+  func diagnosticsReport() -> String {
+    let samples = menuBarProbe.samples()
+    let readings = currentReadings()
+    guard !readings.isEmpty else {
+      return "No displays reported."
+    }
+
+    // A one-shot run inside a fullscreen Space cannot calibrate the tracker,
+    // because calibration needs to see the menu bar at least once. The raw
+    // sample list still shows whether the probe reads the window server at all.
+    var lines = [
+      "menu-bar layer windows found: "
+        + (samples.map { String($0.count) } ?? "window list unreadable")
+    ]
+    lines += (samples ?? []).map { sample in
+      "  bounds \(NSStringFromRect(sample.bounds)) alpha \(sample.alpha)"
+    }
+    lines.append("")
+
+    lines += readings.map { reading in
+      let menuBarWindow: String
+      switch reading.evidence.menuBarWindowIsVisible {
+      case .some(true): menuBarWindow = "visible"
+      case .some(false): menuBarWindow = "hidden"
+      case .none: menuBarWindow = "uncalibrated"
+      }
+      return """
+        \(reading.name) [\(reading.id)]
+          mode: \(mode.rawValue)
+          menu-bar window: \(menuBarWindow)
+          menu bar hidden by geometry: \(reading.evidence.menuBarIsHiddenByGeometry)
+          frontmost window covers display: \(reading.evidence.frontmostWindowCoversDisplay)
+          pointer revealing menu bar: \(reading.evidence.pointerIsRevealingMenuBar)
+          session active: \(reading.evidence.sessionIsActive)
+          clock enabled: \(reading.evidence.appIsEnabled)
+          decision: \(reading.shouldShow ? "show" : "hide")
+        """
+    }
+    return lines.joined(separator: "\n")
+  }
+
+  private struct DisplayReading {
+    let id: String
+    let name: String
+    let evidence: ClockVisibilityEvidence
+    let shouldShow: Bool
+  }
+
+  private func currentReadings() -> [DisplayReading] {
     let displays = displayProvider.currentDisplays()
     let now = Date()
     let pointer = NSEvent.mouseLocation
-    let observations: [FrontmostWindowObservation]
 
+    presenceTracker.retainCalibration(for: Set(displays.map(\.id)))
+    let menuBarPresence = presenceTracker.update(
+      menuBarWindows: menuBarProbe.samples(),
+      displays: displays.map {
+        MenuBarDisplaySample(id: $0.id, bounds: CGDisplayBounds($0.displayID))
+      }
+    )
+
+    let frontmostWindowBounds: [CGRect]
     if let frontmostApplication = NSWorkspace.shared.frontmostApplication {
-      observations = probe.observations(
+      frontmostWindowBounds = windowProbe.windowBounds(
         processIdentifier: frontmostApplication.processIdentifier
       )
     } else {
-      observations = []
+      frontmostWindowBounds = []
     }
 
-    let coverageSnapshots = observations.map { observation in
-      WindowCoverageSnapshot(
-        identity: observation.identity,
-        coveredDisplayIDs: Set(
-          displays.compactMap { display in
-            WindowCoverage.coversDisplay(
-              windowBounds: observation.bounds,
-              displayBounds: CGDisplayBounds(display.displayID),
-              allowedTopInset: display.fullscreenTopInset
-            ) ? display.id : nil
-          }
+    return displays.compactMap { display -> DisplayReading? in
+      guard let screen = screen(for: display.displayID) else {
+        return nil
+      }
+
+      let displayBounds = CGDisplayBounds(display.displayID)
+      let isCovered = frontmostWindowBounds.contains { bounds in
+        WindowCoverage.coversDisplay(
+          windowBounds: bounds,
+          displayBounds: displayBounds,
+          allowedTopInset: display.fullscreenTopInset
         )
+      }
+
+      let revealBandHeight = max(NSStatusBar.system.thickness, screen.safeAreaInsets.top, 24)
+      let pointerIsAtTop =
+        screen.frame.contains(pointer)
+        && pointer.y >= screen.frame.maxY - revealBandHeight
+      if pointerIsAtTop {
+        revealHoldUntil[display.id] = now.addingTimeInterval(0.9)
+      }
+
+      let evidence = ClockVisibilityEvidence(
+        appIsEnabled: appIsEnabled,
+        sessionIsActive: sessionIsActive,
+        displayIsAvailable: true,
+        menuBarIsHiddenByGeometry: abs(screen.frame.maxY - screen.visibleFrame.maxY) <= 1,
+        menuBarWindowIsVisible: menuBarPresence[display.id],
+        frontmostWindowCoversDisplay: isCovered,
+        pointerIsRevealingMenuBar: now < revealHoldUntil[display.id, default: .distantPast]
+      )
+
+      return DisplayReading(
+        id: display.id,
+        name: display.localizedName,
+        evidence: evidence,
+        shouldShow: ClockVisibilityPolicy.shouldShowClock(mode: mode, evidence: evidence)
       )
     }
-    let coveredDisplayIDs = transitionDetector.update(
-      snapshots: coverageSnapshots,
-      at: now.timeIntervalSinceReferenceDate
-    )
-    lastObservedWindowIdentities = Set(observations.map(\.identity))
+  }
 
-    let visibleDisplayIDs = Set(
-      displays.compactMap { display -> String? in
-        guard let screen = screen(for: display.displayID) else {
-          return nil
-        }
+  private func evaluate(force: Bool) {
+    let readings = currentReadings()
+    var state = DisplayVisibilityState()
+    for reading in readings {
+      if reading.shouldShow {
+        state.visibleDisplayIDs.insert(reading.id)
+      }
+      // The probe answers directly when it is calibrated for this display.
+      // Until then the answer is unknown, so the geometry evidence stands in:
+      // a menu bar that geometry does not report as hidden is treated as drawn,
+      // which keeps the clock below the strip rather than under a real menu bar.
+      if reading.evidence.menuBarWindowIsVisible ?? !reading.evidence.menuBarIsHiddenByGeometry {
+        state.menuBarVisibleDisplayIDs.insert(reading.id)
+      }
+    }
 
-        let revealBandHeight = max(NSStatusBar.system.thickness, screen.safeAreaInsets.top, 24)
-        let pointerIsAtTop =
-          screen.frame.contains(pointer)
-          && pointer.y >= screen.frame.maxY - revealBandHeight
-        if pointerIsAtTop {
-          revealHoldUntil[display.id] = now.addingTimeInterval(0.9)
-        }
-
-        let evidence = ClockVisibilityEvidence(
-          appIsEnabled: appIsEnabled,
-          sessionIsActive: sessionIsActive,
-          displayIsAvailable: true,
-          menuBarIsHiddenByGeometry: abs(screen.frame.maxY - screen.visibleFrame.maxY) <= 1,
-          frontmostWindowCoversDisplay: coveredDisplayIDs.contains(display.id),
-          pointerIsRevealingMenuBar: now < revealHoldUntil[display.id, default: .distantPast]
-        )
-
-        return ClockVisibilityPolicy.shouldShowClock(mode: mode, evidence: evidence)
-          ? display.id : nil
-      })
-
-    guard force || lastVisibleDisplayIDs != visibleDisplayIDs else {
+    guard force || lastState != state else {
       return
     }
-    lastVisibleDisplayIDs = visibleDisplayIDs
-    onChange?(visibleDisplayIDs)
+    lastState = state
+    onChange?(state)
   }
 
   private func screen(for displayID: CGDirectDisplayID) -> NSScreen? {

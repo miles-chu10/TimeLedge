@@ -1,14 +1,9 @@
 import CoreGraphics
 import Foundation
-import TimeLedgeCore
 
-struct FrontmostWindowObservation {
-  let identity: WindowIdentity
-  let bounds: CGRect
-}
-
+/// Reads the on-screen bounds of the frontmost application's ordinary windows.
 struct FrontmostWindowProbe {
-  func observations(processIdentifier: pid_t) -> [FrontmostWindowObservation] {
+  func windowBounds(processIdentifier: pid_t) -> [CGRect] {
     guard processIdentifier > 0,
       let windowList = CGWindowListCopyWindowInfo(
         [.optionOnScreenOnly, .excludeDesktopElements],
@@ -18,12 +13,11 @@ struct FrontmostWindowProbe {
       return []
     }
 
-    return windowList.compactMap { window -> FrontmostWindowObservation? in
+    return windowList.compactMap { window -> CGRect? in
       guard
         (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value
           == processIdentifier,
-        (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
-        let windowNumber = (window[kCGWindowNumber as String] as? NSNumber)?.uint32Value
+        (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0
       else {
         return nil
       }
@@ -38,13 +32,7 @@ struct FrontmostWindowProbe {
       else {
         return nil
       }
-      return FrontmostWindowObservation(
-        identity: WindowIdentity(
-          ownerProcessIdentifier: processIdentifier,
-          windowNumber: windowNumber
-        ),
-        bounds: CGRect(x: x, y: y, width: width, height: height)
-      )
+      return CGRect(x: x, y: y, width: width, height: height)
     }
   }
 }

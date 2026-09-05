@@ -9,7 +9,7 @@ protocol DisplayProviding {
 
 @MainActor
 final class SystemDisplayProvider: DisplayProviding {
-  /// Largest menu-bar band height seen per display while the menu bar was
+  /// Last menu-bar band height seen per display while the menu bar was
   /// visible. A fullscreen Space hides the menu bar, which collapses
   /// `visibleFrame` back to `frame`; without this cache the band would shrink to
   /// the status-bar fallback exactly when the overlay needs it most.

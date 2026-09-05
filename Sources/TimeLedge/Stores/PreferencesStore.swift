@@ -70,8 +70,11 @@ final class PreferencesStore: ObservableObject {
     var updated = displayPreferences
     let hasBuiltIn = descriptors.contains(where: { $0.isBuiltIn })
 
-    for (index, descriptor) in descriptors.enumerated() where updated[descriptor.id] == nil {
-      let shouldEnable = descriptor.isBuiltIn || (!hasBuiltIn && index == 0)
+    // A laptop enables its built-in display and leaves extra monitors opt-in.
+    // A desktop Mac has no built-in display, so its externals are its only
+    // displays and all of them are enabled.
+    for descriptor in descriptors where updated[descriptor.id] == nil {
+      let shouldEnable = descriptor.isBuiltIn || !hasBuiltIn
       updated[descriptor.id] = DisplayPreference(
         isEnabled: shouldEnable,
         showsBackground: false
@@ -105,10 +108,12 @@ final class PreferencesStore: ObservableObject {
 
   func resetAppearanceAndFormat() {
     let isClockVisible = preferences.isClockVisible
+    let showsMenuBarClock = preferences.showsMenuBarClock
     let windowLayer = preferences.windowLayer
     let launchAtLogin = preferences.launchAtLogin
     preferences = .defaults
     preferences.isClockVisible = isClockVisible
+    preferences.showsMenuBarClock = showsMenuBarClock
     preferences.windowLayer = windowLayer
     preferences.launchAtLogin = launchAtLogin
   }

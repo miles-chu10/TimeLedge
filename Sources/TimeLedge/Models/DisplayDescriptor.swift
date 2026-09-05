@@ -28,21 +28,26 @@ struct DisplayDescriptor: Identifiable, Equatable {
     self.fullscreenTopInset = fullscreenTopInset
   }
 
-  /// The menu-bar band this display's clock draws inside.
+  /// The band the clock is laid out in.
   ///
-  /// This is the strip the system menu bar occupies, not the area under it. In a
-  /// fullscreen Space the strip is empty, so drawing here puts TimeLedge on the
-  /// same line the system clock uses when the menu bar is visible.
-  var placementBounds: CGRect {
-    if let area = topRightSafeArea, !area.isEmpty {
-      return CGRect(
-        x: max(area.minX, frame.minX),
-        y: max(area.minY, frame.minY),
-        width: min(area.width, frame.width),
-        height: min(area.height, frame.height)
-      )
+  /// While the menu bar is hidden the clock takes over the strip the menu bar
+  /// vacated, which is where a menu-bar clock belongs and which keeps it off
+  /// the app's own content. While the menu bar is on screen the band stops
+  /// below the strip, because the overlay renders under the real menu bar.
+  func placementBounds(menuBarIsVisible: Bool) -> CGRect {
+    guard let area = topRightSafeArea, !area.isEmpty else {
+      return frame
     }
-    return frame
+    guard menuBarIsVisible else {
+      return area
+    }
+    let topEdge = min(max(frame.minY + 1, area.minY), frame.maxY)
+    return CGRect(
+      x: area.minX,
+      y: frame.minY,
+      width: area.width,
+      height: topEdge - frame.minY
+    )
   }
 
   static func == (lhs: DisplayDescriptor, rhs: DisplayDescriptor) -> Bool {

@@ -30,7 +30,8 @@ final class ClockPlacementLayoutTests: XCTestCase {
         for bandHeight: CGFloat in [22, 24, 32] {
           let screen = CGRect(x: -1920, y: top - 1080, width: 1920, height: 1080)
           let band = OverlayPlacement.menuBarBand(screenFrame: screen, bandHeight: bandHeight)
-          let frame = OverlayPlacement.frame(in: band, contentSize: size, rightMargin: 12)
+          let frame = OverlayPlacement.frame(
+            in: band, contentSize: size, rightMargin: 12, alignment: .centered)
           XCTAssertEqual(frame.height, size.height.rounded(.up))
           XCTAssertLessThanOrEqual(frame.maxY, screen.maxY)
           XCTAssertLessThan(frame.minY, band.minY)

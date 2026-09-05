@@ -254,6 +254,13 @@ struct SettingsView: View {
     VStack(alignment: .leading, spacing: 16) {
       Toggle("Show clock", isOn: $store.preferences.isClockVisible)
 
+      Toggle("Show time in the menu bar", isOn: $store.preferences.showsMenuBarClock)
+        .disabled(!store.preferences.isClockVisible)
+
+      Text("Off by default so TimeLedge does not duplicate the system clock.")
+        .font(.caption)
+        .foregroundColor(.secondary)
+
       settingRow("Visibility") {
         Picker("Visibility", selection: $store.visibilityMode) {
           ForEach(ClockVisibilityMode.allCases) { mode in

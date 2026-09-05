@@ -20,12 +20,14 @@ Confirm the manifest declares `TimeLedgeCore`, `TimeLedge`, `TimeLedgeCoreTests`
 
 - [ ] Built-in display is enabled and external displays are disabled on first run
 - [ ] Menu-bar clock uses the selected format and opens the recovery menu
-- [ ] Turning Show Clock off collapses the menu-bar clock to the recovery icon
+- [ ] Turning Show Clock off leaves the menu-bar item on its recovery icon
 - [ ] Overlay clock ignores clicks
 - [ ] Hidden menu bar reveals over the clock without an unreadable collision
 - [ ] Automatic mode shows for hidden-menu-bar and fullscreen evidence
-- [ ] Fullscreen Only mode fails closed without a verified Spaces/full-display
-      transition
+- [ ] Fullscreen Only mode fails closed without full-display window coverage
+- [ ] The clock appears in a fullscreen Space that was already open when
+      TimeLedge launched, and after leaving and re-entering that Space
+- [ ] The menu-bar item stays an icon until Show Time in Menu Bar is enabled
 - [ ] Always mode preserves the enabled-display overlay behavior
 - [ ] Safari native fullscreen keeps the clock visible
 - [ ] QuickTime or another native fullscreen app keeps the clock visible

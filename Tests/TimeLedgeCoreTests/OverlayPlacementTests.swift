@@ -3,6 +3,25 @@ import XCTest
 @testable import TimeLedgeCore
 
 final class OverlayPlacementTests: XCTestCase {
+  func testDefaultTopAlignmentRetainsMainBehavior() {
+    let frame = OverlayPlacement.frame(
+      in: CGRect(x: 0, y: 0, width: 1440, height: 900),
+      contentSize: CGSize(width: 120, height: 22), rightMargin: 12, topMargin: 3
+    )
+    XCTAssertEqual(frame, CGRect(x: 1308, y: 875, width: 120, height: 22))
+  }
+
+  func testRoundedContentWidthNeverExceedsFractionalBand() {
+    let band = CGRect(x: 848.5, y: 950, width: 663.5, height: 32)
+    let frame = OverlayPlacement.frame(
+      in: band, contentSize: CGSize(width: 800, height: 16), rightMargin: 12,
+      alignment: .centered
+    )
+    XCTAssertGreaterThanOrEqual(frame.minX, band.minX)
+    XCTAssertLessThanOrEqual(frame.maxX, band.maxX - 12)
+    XCTAssertLessThanOrEqual(frame.width, band.width - 12)
+  }
+
   /// Real geometry measured from the Window Server on a notched MacBook:
   /// screen frame (0, 0, 1512, 982), menu-bar band y 950 → 982.
   private let notchedScreen = CGRect(x: 0, y: 0, width: 1512, height: 982)
@@ -12,7 +31,7 @@ final class OverlayPlacementTests: XCTestCase {
     let frame = OverlayPlacement.frame(
       in: notchedBand,
       contentSize: CGSize(width: 120, height: 16),
-      rightMargin: 12
+      rightMargin: 12, alignment: .centered
     )
 
     XCTAssertEqual(frame, CGRect(x: 1380, y: 958, width: 120, height: 16))
@@ -24,7 +43,7 @@ final class OverlayPlacementTests: XCTestCase {
       let frame = OverlayPlacement.frame(
         in: notchedBand,
         contentSize: CGSize(width: 120, height: height),
-        rightMargin: 12
+        rightMargin: 12, alignment: .centered
       )
 
       XCTAssertGreaterThanOrEqual(
@@ -47,14 +66,19 @@ final class OverlayPlacementTests: XCTestCase {
         for height: CGFloat in [33, 40, 41, 41.25] {
           let band = CGRect(x: -1920, y: top - bandHeight, width: 1920, height: bandHeight)
           let frame = OverlayPlacement.frame(
-            in: band, contentSize: CGSize(width: 180, height: height), rightMargin: 12
+            in: band, contentSize: CGSize(width: 180, height: height), rightMargin: 12,
+            alignment: .centered
           )
           XCTAssertEqual(frame.height, height.rounded(.up))
           XCTAssertLessThanOrEqual(frame.maxY, top)
           XCTAssertEqual(frame.maxX, -12)
           if frame.height >= bandHeight {
             XCTAssertLessThanOrEqual(frame.minY, band.minY)
-            XCTAssertLessThan(top - frame.maxY, 1)
+            if frame.height > bandHeight {
+              XCTAssertEqual(top - frame.maxY, 3, accuracy: 0.5)
+            } else {
+              XCTAssertLessThan(top - frame.maxY, 1)
+            }
           } else {
             XCTAssertEqual(frame.midY, band.midY, accuracy: 0.5)
           }
@@ -62,15 +86,16 @@ final class OverlayPlacementTests: XCTestCase {
       }
     }
     let historicalFrame = OverlayPlacement.frame(
-      in: notchedBand, contentSize: CGSize(width: 180, height: 40), rightMargin: 12
+      in: notchedBand, contentSize: CGSize(width: 180, height: 40), rightMargin: 12,
+      alignment: .centered
     )
-    XCTAssertEqual(historicalFrame, CGRect(x: 1320, y: 942, width: 180, height: 40))
+    XCTAssertEqual(historicalFrame, CGRect(x: 1320, y: 939, width: 180, height: 40))
   }
 
   func testPositiveOffsetCannotPushClockAbovePhysicalTop() {
     let frame = OverlayPlacement.frame(
       in: notchedBand, contentSize: CGSize(width: 120, height: 16),
-      rightMargin: 12, verticalOffset: 20
+      rightMargin: 12, verticalOffset: 20, alignment: .centered
     )
     XCTAssertEqual(frame.maxY, notchedScreen.maxY)
   }
@@ -79,7 +104,7 @@ final class OverlayPlacementTests: XCTestCase {
     let frame = OverlayPlacement.frame(
       in: notchedBand,
       contentSize: CGSize(width: 120, height: 16),
-      rightMargin: 12
+      rightMargin: 12, alignment: .centered
     )
 
     XCTAssertEqual(frame.maxX, notchedBand.maxX - 12)
@@ -89,7 +114,7 @@ final class OverlayPlacementTests: XCTestCase {
     let frame = OverlayPlacement.frame(
       in: notchedBand,
       contentSize: CGSize(width: 120, height: 16),
-      rightMargin: 38
+      rightMargin: 38, alignment: .centered
     )
 
     XCTAssertEqual(frame.maxX, notchedBand.maxX - 38)
@@ -103,7 +128,7 @@ final class OverlayPlacementTests: XCTestCase {
     let frame = OverlayPlacement.frame(
       in: band,
       contentSize: CGSize(width: 120, height: 16),
-      rightMargin: 12
+      rightMargin: 12, alignment: .centered
     )
 
     XCTAssertEqual(band, CGRect(x: -1920, y: 1056, width: 1920, height: 24))
@@ -114,7 +139,7 @@ final class OverlayPlacementTests: XCTestCase {
     let frame = OverlayPlacement.frame(
       in: CGRect(x: 100, y: 0, width: 80, height: 30),
       contentSize: CGSize(width: 140, height: 20),
-      rightMargin: 12
+      rightMargin: 12, alignment: .centered
     )
 
     XCTAssertEqual(frame.minX, 100)
@@ -127,10 +152,32 @@ final class OverlayPlacementTests: XCTestCase {
       in: notchedBand,
       contentSize: CGSize(width: 120, height: 16),
       rightMargin: 12,
-      verticalOffset: -2
+      verticalOffset: -2, alignment: .centered
     )
 
     XCTAssertEqual(frame.origin.y, 956)
+  }
+
+  func testCentersClockInsideTheFreedMenuBarStrip() {
+    let frame = OverlayPlacement.frame(
+      in: CGRect(x: 848.5, y: 950, width: 663.5, height: 32),
+      contentSize: CGSize(width: 131, height: 16),
+      rightMargin: 12,
+      alignment: .centered
+    )
+
+    XCTAssertEqual(frame, CGRect(x: 1369, y: 958, width: 131, height: 16))
+  }
+
+  func testCenteredClockTallerThanTheStripFallsBackToTheTopAnchor() {
+    let frame = OverlayPlacement.frame(
+      in: CGRect(x: 848.5, y: 950, width: 663.5, height: 32),
+      contentSize: CGSize(width: 180, height: 40),
+      rightMargin: 12,
+      alignment: .centered
+    )
+
+    XCTAssertEqual(frame, CGRect(x: 1320, y: 939, width: 180, height: 40))
   }
 
   func testMaximumContentWidthAccountsForBackgroundPadding() {
@@ -150,7 +197,7 @@ final class OverlayPlacementTests: XCTestCase {
     let frame = OverlayPlacement.frame(
       in: band,
       contentSize: CGSize(width: 120, height: 16),
-      rightMargin: 12
+      rightMargin: 12, alignment: .centered
     )
 
     XCTAssertEqual(band, CGRect(x: -226, y: 2032, width: 1920, height: 30))

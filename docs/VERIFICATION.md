@@ -1,5 +1,13 @@
 # Verification record
 
+## PR #1 integration with the current menu-bar detection code
+
+The integration retains the direct menu-bar observation and optional status clock
+from main commit `7b32572`, then adds measured-band geometry refresh and rounded
+clock containment. Its final native suite and live window/accessibility matrix
+are pending. The earlier test and hardware observations below apply only to their
+named historical snapshots and do not certify this integration.
+
 Prior baseline verified 2026-08-30 on:
 
 - macOS 27.0 (26A5421a), Apple silicon
@@ -67,6 +75,46 @@ Final CI and live fullscreen validation completed 2026-08-31.
 - The local machine currently has Command Line Tools but not full Xcode; the
   macOS GitHub Actions run is therefore the authoritative native build evidence.
 
+## Unreleased menu-bar detection rework
+
+The 0.1.0 fullscreen evidence model was reported broken on a live Mac: in a
+fullscreen Chrome Space the top-right corner was empty, and the menu-bar item
+duplicated the system clock. Re-verification of this change is therefore
+pending, and the 0.1.0 fullscreen evidence above no longer describes the
+shipping code.
+
+- Root cause of the empty corner: `FullscreenTransitionDetector` only trusted
+  full-display coverage that it had watched change during a Spaces transition,
+  and it revoked that trust when the same window stayed frontmost across a Space
+  change. A Space that was already open at launch was never verified, and a
+  verified Space that was left and re-entered could not be verified again,
+  because re-verification required first observing the window not covering the
+  display.
+- The detector and its tests were removed. `MenuBarPresenceTracker` plus
+  `MenuBarWindowProbe` now observe whether the window server draws the menu bar
+  on each display, using public `CGWindowListCopyWindowInfo` metadata (layer,
+  bounds, alpha) and no window contents.
+- The tracker self-calibrates per display and reports *unknown* until it has
+  actually seen that display's menu bar, so menu-bar geometry and full-display
+  coverage remain the fallback evidence.
+- The overlay now takes over the strip the menu bar vacated instead of rendering
+  below it, and the menu-bar item is icon-only unless the user opts in.
+
+macOS CI passed on commit `6aa458c`
+([`33459663780`](https://github.com/miles-chu10/TimeLedge/actions/runs/33459663780)):
+60 XCTest cases with zero failures, release-optimized bundle built, app and
+privacy plists linted, and ad-hoc `codesign --verify --deep --strict` passed.
+The matching push run
+([`33459641275`](https://github.com/miles-chu10/TimeLedge/actions/runs/33459641275))
+uploaded the `TimeLedge-macOS` artifact for local testing.
+
+Still required before release, because no Linux container can produce it:
+
+- Live matrix on a Mac: a fullscreen Space opened before TimeLedge launched, a
+  Space left and re-entered, pointer reveal, an ordinary maximized window, an
+  external display, and the `--diagnose` evidence table on the reporting
+  machine.
+
 ## Static safety evidence
 
 - `OverlayPanel` is non-activating, cannot become key/main, ignores mouse events,
@@ -76,6 +124,8 @@ Final CI and live fullscreen validation completed 2026-08-31.
   visibility monitor reads window metadata but not pixels.
 - The `.floating` overlay remains below the real menu bar's system level, so the
   menu bar can cover it when visible.
+- The menu-bar probe reads window metadata only. It requests no new entitlement,
+  permission, or private API, and it never captures screen content.
 
 ## Menu-bar band placement verified 2026-08-31
 

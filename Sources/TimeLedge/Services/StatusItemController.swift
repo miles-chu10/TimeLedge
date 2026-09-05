@@ -5,13 +5,20 @@ import TimeLedgeCore
 final class StatusItemController: NSObject, NSMenuDelegate {
   private let store: PreferencesStore
   private let statusItem: NSStatusItem
-  private var accessibilityTimer: Timer?
   private let onOpenSettings: () -> Void
   private let onSetLaunchAtLogin: (Bool) -> Void
+  private var clockTimer: Timer?
+  private var renderedTitle: String?
+  private var hasRendered = false
 
   private lazy var showClockItem = NSMenuItem(
     title: "Show Clock",
     action: #selector(toggleClock),
+    keyEquivalent: ""
+  )
+  private lazy var showMenuBarClockItem = NSMenuItem(
+    title: "Show Time in Menu Bar",
+    action: #selector(toggleMenuBarClock),
     keyEquivalent: ""
   )
   private lazy var launchAtLoginItem = NSMenuItem(
@@ -35,17 +42,22 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     statusItem.isVisible = true
     statusItem.button?.toolTip = "TimeLedge"
     refresh()
-    if let button = statusItem.button {
-      accessibilityTimer = Self.scheduleAccessibilityUpdates(button: button) { [weak store] in
-        store?.preferences ?? .defaults
+
+    let clockTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+      Task { @MainActor [weak self] in
+        self?.refresh()
       }
     }
+    RunLoop.main.add(clockTimer, forMode: .common)
+    self.clockTimer = clockTimer
 
     let menu = NSMenu()
     menu.delegate = self
     showClockItem.target = self
+    showMenuBarClockItem.target = self
     launchAtLoginItem.target = self
     menu.addItem(showClockItem)
+    menu.addItem(showMenuBarClockItem)
     menu.addItem(NSMenuItem.separator())
 
     let settingsItem = NSMenuItem(
@@ -68,121 +80,71 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     statusItem.menu = menu
   }
 
+  /// The text to draw in the real menu bar, or `nil` for the icon-only item.
+  ///
+  /// macOS already draws a menu-bar clock, so TimeLedge stays an icon unless
+  /// the user explicitly opts in to a second one.
   static func menuBarTitle(
     at date: Date,
     preferences: ClockPreferences,
     isClockVisible: Bool
   ) -> String? {
-    guard isClockVisible else { return nil }
-    let configuredTitle = ClockFormatter.string(from: date, preferences: preferences)
-    // A custom pattern can render to nothing visible (for example a quoted run of
-    // spaces). `ClockFormatter` only guards a blank *pattern*, so the rendered
-    // result is checked here before it becomes an unreadable accessibility label.
-    guard configuredTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-      return configuredTitle
-    }
-    var fallbackPreferences = preferences
-    fallbackPreferences.customFormatEnabled = false
-    fallbackPreferences.showDate = false
-    fallbackPreferences.showWeekday = false
-    return ClockFormatter.string(from: date, preferences: fallbackPreferences)
-  }
-
-  /// Menu-bar artwork for the status item.
-  ///
-  /// TimeLedge shows exactly one clock — the overlay — so the status item
-  /// carries identity and the menu rather than a second time readout. The app
-  /// icon is used when the bundle provides one; the SF Symbol keeps the item
-  /// reachable in unit tests and unbundled runs.
-  static func statusItemImage(appIcon: NSImage?) -> NSImage {
-    let side: CGFloat = 18
-    if let appIcon, appIcon.isValid {
-      let sized = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
-        appIcon.draw(in: rect)
-        return true
-      }
-      sized.isTemplate = false
-      return sized
-    }
-
-    let fallback =
-      NSImage(systemSymbolName: "clock", accessibilityDescription: "TimeLedge")
-      ?? NSImage(size: NSSize(width: side, height: side))
-    fallback.isTemplate = true
-    return fallback
-  }
-
-  static func statusItemImage() -> NSImage {
-    statusItemImage(appIcon: Bundle.main.image(forResource: "TimeLedge"))
+    guard isClockVisible, preferences.showsMenuBarClock else { return nil }
+    return ClockFormatter.string(from: date, preferences: preferences)
   }
 
   func refresh() {
     guard let button = statusItem.button else { return }
-    statusItem.length = NSStatusItem.squareLength
-    button.title = ""
-    button.image = Self.statusItemImage()
-    button.imagePosition = .imageOnly
-
-    Self.updateAccessibilityLabel(button: button, at: Date(), preferences: store.preferences)
-  }
-
-  /// Refresh only the spoken time; the icon and menu need no per-second work.
-  static func scheduleAccessibilityUpdates(
-    button: NSButton,
-    now: @escaping () -> Date = Date.init,
-    preferences: @escaping () -> ClockPreferences
-  ) -> Timer {
-    let timer = Timer(timeInterval: 1, repeats: true) { [weak button] timer in
-      guard let button else {
-        timer.invalidate()
-        return
-      }
-      MainActor.assumeIsolated {
-        updateAccessibilityLabel(button: button, at: now(), preferences: preferences())
-      }
+    let title = Self.menuBarTitle(
+      at: Date(),
+      preferences: store.preferences,
+      isClockVisible: store.preferences.isClockVisible
+    )
+    guard title != renderedTitle || !hasRendered else {
+      return
     }
-    RunLoop.main.add(timer, forMode: .common)
-    return timer
-  }
+    hasRendered = true
+    renderedTitle = title
 
-  private static func updateAccessibilityLabel(
-    button: NSButton,
-    at date: Date,
-    preferences: ClockPreferences
-  ) {
-    if let title = Self.menuBarTitle(
-      at: date,
-      preferences: preferences,
-      isClockVisible: preferences.isClockVisible
-    ) {
+    if let title {
+      statusItem.length = NSStatusItem.variableLength
+      button.image = nil
+      button.imagePosition = .noImage
+      button.title = title
       button.setAccessibilityLabel("TimeLedge \(title)")
     } else {
+      statusItem.length = NSStatusItem.squareLength
+      button.title = ""
+      button.image = NSImage(
+        systemSymbolName: "clock",
+        accessibilityDescription: "TimeLedge"
+      )
+      button.imagePosition = .imageOnly
       button.setAccessibilityLabel("TimeLedge")
     }
   }
 
-  deinit {
-    accessibilityTimer?.invalidate()
-  }
-
   func stop() {
-    accessibilityTimer?.invalidate()
-    accessibilityTimer = nil
+    clockTimer?.invalidate()
+    clockTimer = nil
     NSStatusBar.system.removeStatusItem(statusItem)
   }
 
   var isStatusItemVisible: Bool { statusItem.isVisible }
-  var statusItemHasImage: Bool { statusItem.button?.image != nil }
-  var statusItemLength: CGFloat { statusItem.length }
 
   func menuNeedsUpdate(_ menu: NSMenu) {
     refresh()
     showClockItem.state = store.preferences.isClockVisible ? .on : .off
+    showMenuBarClockItem.state = store.preferences.showsMenuBarClock ? .on : .off
     launchAtLoginItem.state = store.preferences.launchAtLogin ? .on : .off
   }
 
   @objc private func toggleClock() {
     store.preferences.isClockVisible.toggle()
+  }
+
+  @objc private func toggleMenuBarClock() {
+    store.preferences.showsMenuBarClock.toggle()
   }
 
   @objc private func openSettings() {

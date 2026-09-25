@@ -42,7 +42,7 @@ final class OverlayCoordinator {
         queue: .main
       ) { [weak self] _ in
         Task { @MainActor in
-          self?.applyPreferences()
+          self?.refreshDisplays()
         }
       }
     )

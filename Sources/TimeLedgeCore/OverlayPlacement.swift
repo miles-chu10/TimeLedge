@@ -66,7 +66,8 @@ public enum OverlayPlacement {
     minimumX: CGFloat? = nil
   ) -> CGRect {
     let height = min(max(1, bandHeight), screenFrame.height)
-    let originX = min(max(minimumX ?? screenFrame.minX, screenFrame.minX), screenFrame.maxX - 1)
+    let maximumOriginX = max(screenFrame.minX, screenFrame.maxX - 1)
+    let originX = min(max(minimumX ?? screenFrame.minX, screenFrame.minX), maximumOriginX)
     return CGRect(
       x: originX,
       y: screenFrame.maxY - height,

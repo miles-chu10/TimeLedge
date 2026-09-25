@@ -234,4 +234,16 @@ final class OverlayPlacementTests: XCTestCase {
 
     XCTAssertEqual(band, CGRect(x: 0, y: 0, width: 100, height: 20))
   }
+
+  func testMenuBarBandOriginStaysOnASubPointWideScreen() {
+    let screen = CGRect(x: 10, y: 0, width: 0.5, height: 20)
+    let band = OverlayPlacement.menuBarBand(
+      screenFrame: screen,
+      bandHeight: 10,
+      minimumX: 20
+    )
+
+    XCTAssertEqual(band.minX, screen.minX)
+    XCTAssertEqual(band.maxX, screen.maxX)
+  }
 }
